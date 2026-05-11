@@ -581,7 +581,7 @@ table{min-width:720px}
 .range-toolbar .btn.active{background:var(--brand);color:#1a1208}
 .messenger-shell{display:grid;grid-template-columns:280px minmax(0,1fr);border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;min-height:560px}
 .messenger-contacts{background:#171717;color:#fff;padding:.9rem;display:flex;flex-direction:column;gap:.6rem}
-.messenger-contact{display:flex;gap:.75rem;align-items:center;padding:.7rem;border-radius:12px;background:rgba(255,255,255,.05)}
+.messenger-contact{display:flex;gap:.75rem;align-items:center;padding:.7rem;border-radius:12px;background:rgba(255,255,255,.05);transition:.15s}.messenger-contact.active{background:rgba(201,162,39,.18);border-left:3px solid var(--brand);}.messenger-contact:hover{background:rgba(255,255,255,.09)}
 .messenger-contact-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand-strong));display:flex;align-items:center;justify-content:center;color:#1a1208;font-weight:800;flex-shrink:0}
 .messenger-contact strong{display:block;font-size:.88rem;color:#fff}
 .messenger-contact span{display:block;font-size:.74rem;color:rgba(255,255,255,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
@@ -1556,32 +1556,62 @@ const EMAILJS_PUBLIC_KEY  = "xTrpAR-GfS_uTYS1j";
 
 const ARRAY_COLLECTIONS = ["users","properties","reservations","messages","reports","visitorSessions","propertyVisitors","transactions","contracts"];
 
+// ── localStorage fallback layer ─────────────────────────────────────────────
+const LS = {
+  _prefix: "ger7_",
+  get(k, fb){
+    try{
+      const raw = localStorage.getItem(this._prefix+k);
+      if(raw===null||raw===undefined) return fb;
+      return JSON.parse(raw);
+    }catch(e){ return fb; }
+  },
+  set(k, v){
+    try{ localStorage.setItem(this._prefix+k, JSON.stringify(v)); }catch(e){}
+  }
+};
+
 const DB = {
   // ── low-level helpers ──────────────────────────────────────────────────────
   _db(){ return window._fbDb },
   _lib(){ return window._fbLib },
+  _fbOk(){ return !!(window._fbDb && window._fbLib); },
 
   async get(k, fallback){
+    // If Firebase not ready, use localStorage immediately
+    if(!this._fbOk()){
+      const v = LS.get(k, fallback);
+      return v !== null && v !== undefined ? v : fallback;
+    }
     try {
       const { doc, getDoc, collection, getDocs } = this._lib();
       const db = this._db();
       if(ARRAY_COLLECTIONS.includes(k)){
         const snap = await getDocs(collection(db, k));
-        if(snap.empty) return fallback;
+        if(snap.empty){
+          // fallback to localStorage if Firestore is empty
+          return LS.get(k, fallback);
+        }
         return snap.docs.map(d=>({ _id: d.id, ...d.data() }));
       } else {
         const snap = await getDoc(doc(db,"_config",k));
-        return snap.exists() ? snap.data().value : fallback;
+        if(snap.exists()) return snap.data().value;
+        return LS.get(k, fallback);
       }
-    } catch(e){ console.warn("DB.get",k,e); return fallback; }
+    } catch(e){
+      console.warn("DB.get fallback to LS:",k,e.message);
+      return LS.get(k, fallback);
+    }
   },
 
   async set(k, v){
+    // Always write to localStorage first (instant + reliable)
+    LS.set(k, v);
+    if(!this._fbOk()) return;
     try {
       const { doc, setDoc, collection, addDoc, getDocs, deleteDoc } = this._lib();
       const db = this._db();
       if(ARRAY_COLLECTIONS.includes(k)){
-        // Delete all existing docs, then re-add (simple full-replace strategy)
         const snap = await getDocs(collection(db, k));
         const deletes = snap.docs.map(d=>deleteDoc(doc(db,k,d.id)));
         await Promise.all(deletes);
@@ -1592,22 +1622,31 @@ const DB = {
       } else {
         await setDoc(doc(db,"_config",k),{ value: v });
       }
-    } catch(e){ console.error("DB.set",k,e); }
+    } catch(e){ console.warn("DB.set Firebase write failed, localStorage used:",k); }
   },
 
   // ── optimised single-record ops ─────────────────────────────────────────
   async addItem(col, item){
-    const { collection, addDoc } = this._lib();
-    const ref = await addDoc(collection(this._db(), col), item);
-    return { _id: ref.id, ...item };
+    if(!this._fbOk()){ const arr=LS.get(col,[]); arr.push(item); LS.set(col,arr); return item; }
+    try{
+      const { collection, addDoc } = this._lib();
+      const ref = await addDoc(collection(this._db(), col), item);
+      return { _id: ref.id, ...item };
+    }catch(e){ const arr=LS.get(col,[]); arr.push(item); LS.set(col,arr); return item; }
   },
   async updateItem(col, _id, patch){
-    const { doc, updateDoc } = this._lib();
-    await updateDoc(doc(this._db(), col, _id), patch);
+    if(!this._fbOk()) return;
+    try{
+      const { doc, updateDoc } = this._lib();
+      await updateDoc(doc(this._db(), col, _id), patch);
+    }catch(e){}
   },
   async deleteItem(col, _id){
-    const { doc, deleteDoc } = this._lib();
-    await deleteDoc(doc(this._db(), col, _id));
+    if(!this._fbOk()) return;
+    try{
+      const { doc, deleteDoc } = this._lib();
+      await deleteDoc(doc(this._db(), col, _id));
+    }catch(e){}
   }
 };
 
@@ -1618,7 +1657,9 @@ const CACHE = {};
 async function cacheAll(){
   const keys = [...ARRAY_COLLECTIONS,"siteConfig","activityLog","pageViews","initialized","currentUser","visitorSessions"];
   await Promise.all(keys.map(async k=>{
-    CACHE[k] = await DB.get(k, ARRAY_COLLECTIONS.includes(k) ? [] : null);
+    const fb = ARRAY_COLLECTIONS.includes(k) ? [] : null;
+    const val = await DB.get(k, fb);
+    CACHE[k] = (val !== null && val !== undefined) ? val : fb;
   }));
 }
 
@@ -2218,9 +2259,39 @@ function updateBadges(){
 function renderNotifList(role){
   const listEl=document.getElementById(role+"-notif-list");
   if(!listEl||!currentUser)return;
-  const msgs=SDB.get("messages",[]).filter(m=>m.toId===currentUser.id).slice(-10).reverse();
+  const msgs=SDB.get("messages",[]).filter(m=>m.toId===currentUser.id).slice(-15).reverse();
   if(!msgs.length){listEl.innerHTML='<div style="padding:1rem;text-align:center;color:var(--muted);font-size:.85rem;">No notifications</div>';return;}
-  listEl.innerHTML=msgs.map(m=>`<div class="notif-item"><div class="notif-dot ${m.readAt?'read':''}"></div><div><div class="notif-text">${escapeHtml(m.subject||m.message||"New message")}</div><div class="notif-time">${m.createdAt||""}</div></div></div>`).join("");
+  listEl.innerHTML=msgs.map(m=>{
+    const senderUser=SDB.get("users",[]).find(u=>u.id===m.fromId);
+    const senderName=senderUser?senderUser.name:"Someone";
+    const preview=escapeHtml((m.subject||m.message||"New message").slice(0,60));
+    return `<div class="notif-item" onclick="openNotifConversation('${role}',${m.fromId||0})" style="cursor:pointer;">
+      <div class="notif-dot ${m.readAt?'read':''}"></div>
+      <div style="flex:1;min-width:0;">
+        <div class="notif-text"><strong>${escapeHtml(senderName)}</strong>: ${preview}</div>
+        <div class="notif-time">${m.createdAt||""}</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+function openNotifConversation(role,fromId){
+  // Close notification panel
+  const panel=document.getElementById(role+"-notif-panel");
+  if(panel)panel.classList.remove("open");
+  // Mark messages from this sender as read
+  if(fromId){
+    const msgs=SDB.get("messages",[]);
+    msgs.forEach(m=>{if(m.toId===currentUser?.id&&m.fromId===fromId&&!m.readAt)m.readAt=nowLabel();});
+    SDB.set("messages",msgs);
+  }
+  // Switch to messages tab and select the contact
+  switchDashboardTab(role,"messages",null);
+  if(fromId){
+    const prefix=role+"-";
+    window._messengerActive[prefix]=fromId;
+  }
+  renderDashboards();
+  updateBadges();
 }
 function markAllNotifsRead(role){
   const msgs=SDB.get("messages",[]);
@@ -2882,36 +2953,155 @@ function sendMessage(fromId,toId,prefix=""){
     const reader=new FileReader();reader.onload=e=>save(type,e.target.result);reader.readAsDataURL(file);
   }else if(link){save("link",link)}else save("","");
 }
-function renderSimpleMessagePanel(user,contact,prefix){
-  if(!contact)return'<div class="dashboard-card"><h3>Private messages</h3><p class="muted">A reservation or inquiry is needed before messaging starts here.</p></div>';
-  const conv=getConversationMessages(user.id,contact.id);
-  const thread=conv.length?conv.map(m=>{const mine=m.fromId===user.id?"mine":"";return`<div class="chat-row ${mine}"><div class="chat-bubble"><div class="chat-meta">${m.subject} | ${m.createdAt}</div><div>${m.message}</div>${attachmentChip(m.attachmentType,m.attachmentUrl)}</div></div>`}).join(""):'<p class="muted" style="padding:.5rem;">No messages yet.</p>';
-  const res=normalizeReservationDates().find(r=>(r.clientId===contact.id||r.agentId===contact.id)&&(r.clientId===user.id||r.agentId===user.id));
-  const contract=getContractByReservation(res?.id);
-  const contractBtn=user.role==="agent"&&res?`<button class="btn btn-brand btn-small" onclick="openContractForm(${res.id})">${contract?"View / Edit Contract":"Generate Contract"}</button>`:contract?`<button class="btn btn-brand btn-small" onclick="openContractView(${contract.id})">View Contract</button>`:"";
-  return`<div class="dashboard-card" style="padding:0;overflow:hidden;">
+// ── MULTI-CONTACT MESSENGER STATE ────────────────────────────────────────────
+window._messengerActive = {};
+
+function renderSimpleMessagePanel(user, contacts, prefix) {
+  // contacts can be a single user object OR an array
+  const allContacts = Array.isArray(contacts)
+    ? contacts.filter(Boolean)
+    : contacts ? [contacts] : [];
+
+  if (!allContacts.length) {
+    return '<div class="dashboard-card"><h3>Private messages</h3><p class="muted">A reservation or inquiry is needed before messaging starts here.</p></div>';
+  }
+
+  // Determine active contact
+  const savedId = window._messengerActive[prefix];
+  let activeContact = allContacts.find(c => c.id === savedId) || allContacts[0];
+
+  return _buildMessengerHTML(user, allContacts, activeContact, prefix);
+}
+
+function _buildMessengerHTML(user, allContacts, activeContact, prefix) {
+  const searchVal = window._messengerSearch?.[prefix] || "";
+  const filtered = searchVal
+    ? allContacts.filter(c =>
+        (c.name||"").toLowerCase().includes(searchVal.toLowerCase()) ||
+        (c.email||"").toLowerCase().includes(searchVal.toLowerCase()) ||
+        (c.phone||"").toLowerCase().includes(searchVal.toLowerCase()))
+    : allContacts;
+
+  // Build sidebar contacts
+  const contactsHtml = filtered.length
+    ? filtered.map(c => {
+        const conv = getConversationMessages(user.id, c.id);
+        const last = conv.length ? conv[conv.length-1] : null;
+        const unread = conv.filter(m => m.toId === user.id && !m.readAt).length;
+        const isActive = activeContact && c.id === activeContact.id;
+        return `<div class="messenger-contact${isActive?" active":""}" onclick="switchMessengerContact('${prefix}',${c.id})" style="cursor:pointer;${isActive?"background:rgba(201,162,39,.18);border-left:3px solid var(--brand);":""}" >
+          <div class="messenger-contact-avatar">${escapeHtml((c.name||"?").charAt(0))}</div>
+          <div style="min-width:0;flex:1;">
+            <strong style="display:flex;align-items:center;gap:.4rem;">${escapeHtml(c.name)}${unread>0?`<span style="background:var(--danger);color:#fff;border-radius:999px;font-size:.65rem;padding:.1rem .38rem;">${unread}</span>`:""}</strong>
+            <span>${last ? escapeHtml(String(last.message||"").slice(0,40)) : escapeHtml(c.email||c.phone||"No messages yet")}</span>
+          </div>
+        </div>`;
+      }).join("")
+    : `<p style="padding:.5rem;font-size:.82rem;color:rgba(255,255,255,.45);">No contacts found.</p>`;
+
+  // Thread for active contact
+  let threadHtml = '<p class="muted" style="padding:.5rem;">Select a contact to view messages.</p>';
+  let headHtml = "";
+  let composeHtml = "";
+
+  if (activeContact) {
+    const conv = getConversationMessages(user.id, activeContact.id);
+    threadHtml = conv.length
+      ? conv.map(m => {
+          const mine = m.fromId === user.id ? "mine" : "";
+          return `<div class="chat-row ${mine}"><div class="chat-bubble"><div class="chat-meta">${m.createdAt}</div><div>${escapeHtml(m.message)}</div>${attachmentChip(m.attachmentType, m.attachmentUrl)}</div></div>`;
+        }).join("")
+      : '<p class="muted" style="padding:.5rem;">No messages yet. Say hello!</p>';
+
+    const res = normalizeReservationDates().find(r =>
+      (r.clientId === activeContact.id || r.agentId === activeContact.id) &&
+      (r.clientId === user.id || r.agentId === user.id)
+    );
+    const contract = getContractByReservation(res?.id);
+    const contractBtn = user.role === "agent" && res
+      ? `<button class="btn btn-brand btn-small" onclick="openContractForm(${res.id})">${contract ? "View / Edit Contract" : "Generate Contract"}</button>`
+      : contract
+        ? `<button class="btn btn-brand btn-small" onclick="openContractView(${contract.id})">View Contract</button>`
+        : "";
+
+    headHtml = `<div class="messenger-main-head">
+      <div>
+        <h3>${escapeHtml(activeContact.name)}</h3>
+        <p class="muted">${escapeHtml(activeContact.email||"No email")}${activeContact.phone ? ` · ${escapeHtml(activeContact.phone)}` : ""}</p>
+      </div>
+      <div class="stack-actions">
+        <button class="btn btn-outline btn-small" onclick="openClientProfileModal(${activeContact.id})">View Contact</button>
+        ${contractBtn}
+        <button class="btn btn-outline btn-small" onclick="openReportModal(${activeContact.id})">Report</button>
+      </div>
+    </div>`;
+
+    composeHtml = `<div class="messenger-compose">
+      <div class="field" style="margin-bottom:.8rem;"><textarea id="${prefix}message-body" placeholder="Type a message…" style="min-height:72px;"></textarea></div>
+      <div class="form-grid" style="margin-bottom:.8rem;">
+        <div class="field"><label>Attach picture or video</label><input id="${prefix}message-file" type="file" accept="image/*,video/*"></div>
+        <div class="field"><label>Or paste link</label><input id="${prefix}message-link" type="url" placeholder="https://..."></div>
+      </div>
+      <div class="stack-actions"><button class="btn btn-brand btn-small" onclick="sendMessageToActive('${prefix}',${user.id})">Send</button></div>
+    </div>`;
+  }
+
+  return `<div class="dashboard-card" style="padding:0;overflow:hidden;">
     <div class="messenger-shell">
       <aside class="messenger-contacts">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem;"><strong>Chats</strong><span>•••</span></div>
-        <div class="messenger-contact">
-          <div class="messenger-contact-avatar">${escapeHtml((contact.name||"?").charAt(0))}</div>
-          <div><strong>${escapeHtml(contact.name)}</strong><span>${escapeHtml(contact.email||contact.phone||"Contact")}</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;padding-bottom:.5rem;border-bottom:1px solid rgba(255,255,255,.08);">
+          <strong style="font-size:.9rem;">Chats (${allContacts.length})</strong>
         </div>
+        <div style="margin-bottom:.6rem;">
+          <input
+            type="text"
+            placeholder="🔍 Search contacts…"
+            value="${escapeHtml(searchVal)}"
+            oninput="filterMessengerContacts('${prefix}', this.value)"
+            style="width:100%;padding:.55rem .75rem;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.07);color:#fff;font-size:.82rem;"
+          >
+        </div>
+        ${contactsHtml}
       </aside>
       <section class="messenger-main">
-        <div class="messenger-main-head"><div><h3>${escapeHtml(contact.name)}</h3><p class="muted">${escapeHtml(contact.email||"No email")} ${contact.phone?` · ${escapeHtml(contact.phone)}`:""}</p></div><div class="stack-actions"><button class="btn btn-outline btn-small" onclick="openClientProfileModal(${contact.id})">View Contact</button>${contractBtn}<button class="btn btn-outline btn-small" onclick="openReportModal(${contact.id})">Report</button></div></div>
-        <div class="messenger-thread">${thread}</div>
-        <div class="messenger-compose">
-          <div class="field" style="margin-bottom:.8rem;"><textarea id="${prefix}message-body" placeholder="Type a message…" style="min-height:72px;"></textarea></div>
-          <div class="form-grid" style="margin-bottom:.8rem;">
-            <div class="field"><label>Attach picture or video</label><input id="${prefix}message-file" type="file" accept="image/*,video/*"></div>
-            <div class="field"><label>Or paste link</label><input id="${prefix}message-link" type="url" placeholder="https://..."></div>
-          </div>
-          <div class="stack-actions"><button class="btn btn-brand btn-small" onclick="sendMessage(${user.id},${contact.id},'${prefix}')">Send</button></div>
-        </div>
+        ${headHtml}
+        <div class="messenger-thread" id="${prefix}thread">${threadHtml}</div>
+        ${composeHtml}
       </section>
     </div>
   </div>`;
+}
+
+function filterMessengerContacts(prefix, val) {
+  if (!window._messengerSearch) window._messengerSearch = {};
+  window._messengerSearch[prefix] = val;
+  renderDashboards();
+}
+
+function switchMessengerContact(prefix, contactId) {
+  window._messengerActive[prefix] = contactId;
+  // Mark messages as read
+  const msgs = SDB.get("messages", []);
+  let changed = false;
+  msgs.forEach(m => {
+    if (m.toId === currentUser?.id && m.fromId === contactId && !m.readAt) {
+      m.readAt = nowLabel(); changed = true;
+    }
+  });
+  if (changed) SDB.set("messages", msgs);
+  renderDashboards();
+  updateBadges();
+  // Scroll thread to bottom
+  setTimeout(() => {
+    const thread = document.getElementById(prefix + "thread");
+    if (thread) thread.scrollTop = thread.scrollHeight;
+  }, 80);
+}
+
+function sendMessageToActive(prefix, fromId) {
+  const activeId = window._messengerActive[prefix];
+  if (!activeId) { notify("Select a contact first.", "error"); return; }
+  sendMessage(fromId, activeId, prefix);
 }
 function renderMessengerAudit(messages){
   if(!messages.length)return'<p class="muted">No private messages yet.</p>';
@@ -3502,7 +3692,12 @@ function renderClientDashboard(){
   const transactions=filterItems(transactionsAll,"clientTransactions","week");
   const myContracts=SDB.get("contracts",[]).filter(c=>c.clientId===currentUser.id);
   const agentIds=[...new Set(reservationsAll.map(r=>r.agentId))];
-  const contactAgent=SDB.get("users",[]).find(u=>u.id===agentIds[0]&&u.role==="agent");
+  // Collect ALL agents client has interacted with
+  const _clientAllUsers=SDB.get("users",[]);
+  const _clientSeenIds=new Set();
+  const contactAgent=[];
+  agentIds.forEach(aid=>{if(!_clientSeenIds.has(aid)){_clientSeenIds.add(aid);const u=_clientAllUsers.find(x=>x.id===aid&&x.role==="agent");if(u)contactAgent.push(u);}});
+  SDB.get("messages",[]).filter(m=>m.toId===currentUser.id).forEach(m=>{if(!_clientSeenIds.has(m.fromId)){_clientSeenIds.add(m.fromId);const u=_clientAllUsers.find(x=>x.id===m.fromId);if(u)contactAgent.push(u);}});
   const progress=getClientProgress(currentUser.id);
   const properties=SDB.get("properties",[]);
 
@@ -3614,8 +3809,12 @@ function renderAgentDashboard(){
   const myRes=filterItems(myResAll,"agentAppointments","week");
   const myVisitors=SDB.get("propertyVisitors",[]).filter(v=>myProps.some(p=>p.id===v.propertyId));
   const isApproved=currentUser.verificationStatus==="approved";
-  const primaryClientId=myResAll[0]?myResAll[0].clientId:0;
-  const contactClient=SDB.get("users",[]).find(u=>u.id===primaryClientId);
+  // Collect ALL unique clients this agent has interactions with
+  const _allUsers2=SDB.get("users",[]);
+  const _seenIds2=new Set();
+  const contactClient=[];
+  myResAll.forEach(r=>{if(r.clientId&&!_seenIds2.has(r.clientId)){_seenIds2.add(r.clientId);const u=_allUsers2.find(x=>x.id===r.clientId);if(u)contactClient.push(u);}});
+  SDB.get("messages",[]).filter(m=>m.toId===currentUser.id).forEach(m=>{if(!_seenIds2.has(m.fromId)){_seenIds2.add(m.fromId);const u=_allUsers2.find(x=>x.id===m.fromId);if(u)contactClient.push(u);}});
   document.getElementById("agent-overview").innerHTML=`<div class="stat-grid"><div class="stat-card"><span class="dash-label">Verification</span><strong>${currentUser.verificationStatus||"pending"}</strong></div><div class="stat-card"><span class="dash-label">Listings</span><strong>${myProps.length}</strong></div><div class="stat-card"><span class="dash-label">Appointments</span><strong>${myRes.length}</strong></div><div class="stat-card"><span class="dash-label">Visitors</span><strong>${myVisitors.length}</strong></div></div>${!isApproved?`<div class="pending-wall"><h3>⏳ Awaiting Admin Approval</h3><p>Your agent application is under review. You will be notified once approved.</p></div>`:""}<div class="dashboard-card"><h3>Verification record</h3><p><strong>Agent type:</strong> ${currentUser.agentType||"Not set"}</p><p style="margin-top:.4rem;"><strong>NBI clearance:</strong> ${currentUser.nbiNumber||"Not submitted"}</p><p style="margin-top:.4rem;"><strong>PRC license:</strong> ${currentUser.prcNumber||"Not provided"} ${currentUser.licensed?'<span class="badge badge-success">Licensed</span>':""}</p></div>`;
   document.getElementById("agent-listings").innerHTML=`<div class="dashboard-card"><h3>My listings</h3><div class="table-wrap">${myProps.length?`<table><tr><th>Property</th><th>Type</th><th>Price</th><th>Views</th><th>Status</th><th>Actions</th></tr>${myProps.map(p=>`<tr><td><strong>${p.title}</strong><br><span class="muted">${p.location}</span></td><td>${p.type}</td><td>${peso(p.price)}</td><td>${p.views||0}</td><td>${statusBadge(p.status)}</td><td><button class="btn btn-outline btn-small" onclick="editProperty(${p.id})">Edit</button></td></tr>`).join("")}</table>`:'<p class="muted">No listings yet.</p>'}</div></div>`;
   // Appointments with workflow actions
@@ -4189,26 +4388,34 @@ async function boot(){
   const loader=document.getElementById("boot-loading");
   if(loader)loader.style.display="flex";
 
-  // First paint should not wait for Firebase/network. Render immediately, then hydrate.
+  // Always load from localStorage first so the app works offline / without Firebase
+  await cacheAll();
   syncActivationVerificationMethod();
   syncActivationRole();
+
+  // Restore logged-in user from cache immediately
+  const _savedEarly=SDB.get("currentUser",null);
+  if(_savedEarly&&_savedEarly.id){
+    const _usersEarly=SDB.get("users",[]);
+    const _freshEarly=_usersEarly.find(u=>u.id===_savedEarly.id);
+    if(_freshEarly&&_freshEarly.status!=="suspended") currentUser=_freshEarly;
+    else SDB.set("currentUser",null);
+  }
+
   renderHome();
   renderRulesPage();
   if(loader)loader.style.display="none";
+  if(currentUser){ applyUserState(); openMyPortal(); }
 
-  try{
-    if(!window._fbReady){
-      await Promise.race([
-        new Promise(res=>window.addEventListener("firebase-ready",res,{once:true})),
-        new Promise(res=>setTimeout(res,1800))
-      ]);
-    }
-    await cacheAll();
-    await seedData();
-    await cacheAll();
-    cleanupDuplicateProperties();
-    normalizeReservationDates();
-    trackVisitor();
+  // Seed default data if first run
+  await seedData();
+  await cacheAll();
+  cleanupDuplicateProperties();
+  normalizeReservationDates();
+  trackVisitor();
+
+  // Re-check user after seed (in case it was just created)
+  if(!currentUser){
     const savedUser=SDB.get("currentUser",null);
     if(savedUser&&savedUser.id){
       const users=SDB.get("users",[]);
@@ -4216,17 +4423,33 @@ async function boot(){
       if(freshUser&&freshUser.status!=="suspended"){ currentUser=freshUser; }
       else { SDB.set("currentUser",null); }
     }
-    renderHome();
-    renderRulesPage();
-    if(currentUser){ applyUserState(); openMyPortal(); }
-    const rawScript=document.querySelector('script[type="module"]')?.textContent||"";
-    if(rawScript.includes("YOUR_API_KEY")||rawScript.includes("YOUR_PROJECT_ID")){
-      const banner=document.getElementById("setup-banner");
-      if(banner)banner.style.display="block";
-    }
-  }catch(e){
-    console.warn("Background boot failed",e);
-    notify("Loaded local view. Some cloud data may still be unavailable.","error");
+  }
+
+  renderHome();
+  renderRulesPage();
+  if(currentUser){ applyUserState(); openMyPortal(); }
+
+  // Try Firebase in background (non-blocking)
+  if(!window._fbReady){
+    Promise.race([
+      new Promise(res=>window.addEventListener("firebase-ready",res,{once:true})),
+      new Promise(res=>setTimeout(res,3000))
+    ]).then(async ()=>{
+      if(window._fbReady){
+        try{
+          await cacheAll();
+          renderHome();
+          if(currentUser) renderDashboards();
+        }catch(e){ console.warn("Firebase hydration failed",e); }
+      }
+    });
+  } else {
+    // Firebase already ready, sync from cloud
+    try{
+      await cacheAll();
+      renderHome();
+      if(currentUser) renderDashboards();
+    }catch(e){ console.warn("Firebase sync failed",e); }
   }
 }
 
