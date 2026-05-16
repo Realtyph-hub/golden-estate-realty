@@ -508,52 +508,37 @@ th{color:var(--muted);text-transform:uppercase;font-size:.76rem;letter-spacing:.
 /* view counter badge */
 .view-counter{display:inline-flex;align-items:center;gap:.3rem;font-size:.75rem;color:var(--muted);padding:.2rem .5rem;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
 
+/* ── Hamburger button (hidden on desktop) ── */
+.hamburger-btn{display:none;background:none;border:none;cursor:pointer;padding:.4rem .5rem;border-radius:8px;color:var(--ink);font-size:1.4rem;line-height:1;margin-right:.4rem;}
+.hamburger-btn:hover{background:var(--panel);}
+/* ── Sidebar overlay backdrop ── */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:199;backdrop-filter:blur(2px);}
+
 @media(max-width:900px){
-  :root{--sidebar-width:200px;}
-  .app-sidebar{transform:none;width:var(--sidebar-width);position:fixed;height:100vh;overflow-y:auto;}
-  .app-content{margin-left:var(--sidebar-width);}
+  .hamburger-btn{display:flex;align-items:center;justify-content:center;}
+  .app-sidebar{transform:translateX(-110%);position:fixed;top:0;left:0;height:100vh;z-index:200;width:270px;transition:transform .28s cubic-bezier(.4,0,.2,1);box-shadow:4px 0 24px rgba(0,0,0,.35);overflow-y:auto;}
+  .app-sidebar.open{transform:translateX(0);}
+  .app-content{margin-left:0;}
   .chat-layout{grid-template-columns:1fr}
   .chat-list-panel{display:none}
   .app-topbar-search{display:none}
   .app-topbar{padding:0 .75rem;}
   .app-main{padding:1rem .75rem;}
   .dashboard-card,.panel,.section-card{padding:.9rem;}
-  .messenger-shell{grid-template-columns:160px minmax(0,1fr);}
-  .messenger-contacts{padding:.6rem;}
-  .messenger-contact strong{font-size:.78rem;}
-  .messenger-contact span{font-size:.68rem;}
-}
-@media(max-width:640px){
-  :root{--sidebar-width:180px;}
-  .summary-grid{grid-template-columns:repeat(2,1fr)}
-  .app-topbar-search{display:none}
-  .app-main{padding:.75rem .6rem;}
-  .sidebar-item{padding:.65rem .8rem;font-size:.8rem;gap:.55rem;}
-  .sidebar-section-label{padding:.6rem 1rem .2rem;font-size:.6rem;}
-  .sidebar-logo{padding:1rem .8rem!important;}
-  .sidebar-user-chip{padding:.5rem .6rem;}
-  .sidebar-user-name{font-size:.75rem;}
-  .sidebar-user-role{font-size:.65rem;}
-  .page-title-bar h2{font-size:1.3rem;}
-  th,td{padding:.6rem .5rem;font-size:.8rem;}
-  .messenger-shell{grid-template-columns:140px minmax(0,1fr);}
+  .messenger-shell{grid-template-columns:1fr;}
+  .messenger-contacts{display:none;}
   .stat-grid{grid-template-columns:repeat(2,1fr);}
   .form-grid{grid-template-columns:1fr;}
+  .summary-grid{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:640px){
+  .app-main{padding:.75rem .6rem;}
+  .page-title-bar h2{font-size:1.3rem;}
+  th,td{padding:.6rem .5rem;font-size:.8rem;}
   .dashboard-card h3,.section-card h3{font-size:1.15rem;}
   .btn-small{padding:.45rem .75rem;font-size:.78rem;}
   .app-layout{overflow-x:hidden;}
-}
-@media(max-width:480px){
-  :root{--sidebar-width:160px;}
-  .sidebar-item{padding:.6rem .65rem;font-size:.76rem;}
-  .si-icon{font-size:.85rem!important;}
-  .app-main{padding:.6rem .5rem;}
-  .summary-card{padding:.85rem .75rem;gap:.6rem;}
-  .summary-card-icon{width:38px;height:38px;font-size:1.1rem;}
-  .summary-card-info strong{font-size:1.25rem;}
-  .messenger-shell{grid-template-columns:130px minmax(0,1fr);}
-  .messenger-contact strong{font-size:.74rem;}
-  .messenger-main-head h3{font-size:.9rem;}
+  .summary-grid{grid-template-columns:repeat(2,1fr);}
 }
 
 /* FOOTER */
@@ -720,9 +705,9 @@ table{min-width:720px}
   <div class="nav-actions">
     <div class="nav-stat" id="nav-visitor-stat" style="display: none;">Visitors: <strong id="visitor-count">22</strong></div>
     <div class="user-chip" id="user-chip" style="display: none;"></div>
-    <button class="btn btn-outline" id="create-account-trigger" onclick="showPage(&#39;auth&#39;);setTimeout(()=&gt;switchAuth(&#39;register&#39;),80)" style="font-size:.85rem;padding:.55rem 1rem;">Create Account</button>
-    <button class="btn btn-light" id="staff-trigger" onclick="showPage(&#39;auth&#39;);setTimeout(()=&gt;{document.getElementById(&#39;login-identifier&#39;).placeholder=&#39;staff@goldenestate.ph&#39;;},80)" style="font-size:.85rem;padding:.55rem 1rem;">🔒 Staff / Admin</button>
-    <button class="btn btn-brand" id="signin-trigger" onclick="showPage(&#39;auth&#39;)">Client Sign In</button>
+    <button class="btn btn-outline" id="create-account-trigger" onclick="openCreateAccount()" style="font-size:.85rem;padding:.55rem 1rem;">Create Account</button>
+    <button class="btn btn-light" id="staff-trigger" onclick="openStaffLogin()" style="font-size:.85rem;padding:.55rem 1rem;">🔒 Staff / Admin</button>
+    <button class="btn btn-brand" id="signin-trigger" onclick="openClientLogin()">Client Sign In</button>
     <button class="btn btn-brand hidden" id="dashboard-trigger" onclick="openMyPortal()">My Portal</button>
     <button class="btn btn-light hidden" id="logout-trigger" onclick="logout()">Logout</button>
   </div>
@@ -740,7 +725,7 @@ table{min-width:720px}
       <p id="hero-subheadline">Clients verify through a 6-digit code before they reserve. Agents are approved only after document review.</p>
       <div class="hero-actions">
         <button class="btn btn-brand" onclick="scrollToSection(&#39;listing-section&#39;)">🔵 Browse Properties</button>
-        <button class="btn btn-outline" onclick="showPage(&#39;auth&#39;)" style="border-color:rgba(255,255,255,.35);color:#fff;">✨ Create Account</button>
+        <button class="btn btn-outline" onclick="openCreateAccount()" style="border-color:rgba(255,255,255,.35);color:#fff;">✨ Create Account</button>
       </div>
       <form class="quick-search-shell hero-quick-search" onsubmit="event.preventDefault();applyHeroSearch();">
         <div class="quick-search-grid">
@@ -1185,9 +1170,11 @@ table{min-width:720px}
         </div>
       </div>
     </aside>
+    <div class="sidebar-overlay" id="client-sidebar-overlay" onclick="closeSidebar('client')"></div>
     <div class="app-content">
       <div class="app-topbar">
         <div class="app-topbar-left">
+          <button class="hamburger-btn" onclick="openSidebar('client')" title="Open menu">☰</button>
           <div class="app-topbar-search"><span>🔍</span><input type="text" placeholder="Search properties, agents…" oninput="renderHome()"></div>
         </div>
         <div class="app-topbar-right">
@@ -1250,9 +1237,11 @@ table{min-width:720px}
         </div>
       </div>
     </aside>
+    <div class="sidebar-overlay" id="agent-sidebar-overlay" onclick="closeSidebar('agent')"></div>
     <div class="app-content">
       <div class="app-topbar">
         <div class="app-topbar-left">
+          <button class="hamburger-btn" onclick="openSidebar('agent')" title="Open menu">☰</button>
           <div class="app-topbar-search"><span>🔍</span><input type="text" placeholder="Search clients, properties…"></div>
         </div>
         <div class="app-topbar-right">
@@ -1405,9 +1394,6 @@ table{min-width:720px}
         <div class="sidebar-item" onclick="switchDashboardTab(&#39;admin&#39;,&#39;users&#39;,this)" data-tab="users"><span class="si-icon">👥</span> All Users</div>
         <div class="sidebar-item" onclick="switchDashboardTab(&#39;admin&#39;,&#39;staff&#39;,this)" data-tab="staff"><span class="si-icon">🔑</span> Staff</div>
         <div class="sidebar-section-label">Operations</div>
-        <div class="sidebar-item" onclick="switchDashboardTab(&#39;admin&#39;,&#39;messages&#39;,this)" data-tab="messages" id="admin-msg-btn"><span class="si-icon">💬</span> All Chats <span class="si-badge" id="admin-unread-badge" style="display:none">0</span></div>
-        <div class="sidebar-item" onclick="switchDashboardTab(&#39;admin&#39;,&#39;transactions&#39;,this)" data-tab="transactions"><span class="si-icon">💰</span> Transactions</div>
-        <div class="sidebar-item" onclick="switchDashboardTab(&#39;admin&#39;,&#39;appointments&#39;,this)" data-tab="appointments"><span class="si-icon">📅</span> Appointments</div>
         <div class="sidebar-item" onclick="switchDashboardTab(&#39;admin&#39;,&#39;reports&#39;,this)" data-tab="reports"><span class="si-icon">🚨</span> Reports</div>
         <div class="sidebar-section-label">System</div>
         <div class="sidebar-item" onclick="switchDashboardTab(&#39;admin&#39;,&#39;auditlog&#39;,this)" data-tab="auditlog"><span class="si-icon">📋</span> Audit Log / Trail</div>
@@ -1422,9 +1408,11 @@ table{min-width:720px}
         </div>
       </div>
     </aside>
+    <div class="sidebar-overlay" id="admin-sidebar-overlay" onclick="closeSidebar('admin')"></div>
     <div class="app-content">
       <div class="app-topbar">
         <div class="app-topbar-left">
+          <button class="hamburger-btn" onclick="openSidebar('admin')" title="Open menu">☰</button>
           <div class="app-topbar-search"><span>🔍</span><input type="text" placeholder="Search users, properties…"></div>
         </div>
         <div class="app-topbar-right">
@@ -1445,9 +1433,9 @@ table{min-width:720px}
         <section id="admin-clients" class="dash-section"></section>
         <section id="admin-users" class="dash-section"></section>
         <section id="admin-staff" class="dash-section"></section>
-        <section id="admin-messages" class="dash-section"></section>
-        <section id="admin-transactions" class="dash-section"></section>
-        <section id="admin-appointments" class="dash-section"></section>
+        <section id="admin-messages" class="dash-section" style="display:none!important;"></section>
+        <section id="admin-transactions" class="dash-section" style="display:none!important;"></section>
+        <section id="admin-appointments" class="dash-section" style="display:none!important;"></section>
         <section id="admin-reports" class="dash-section"></section>
         <section id="admin-auditlog" class="dash-section"></section>
         <section id="admin-backup" class="dash-section"></section>
@@ -1617,7 +1605,7 @@ const DB = {
     // If Firebase not ready, use localStorage immediately
     if(!this._fbOk()){
       const v = LS.get(k, fallback);
-      return v !== null && v !== undefined ? v : fallback;
+      return (v !== null && v !== undefined) ? v : fallback;
     }
     try {
       const { doc, getDoc, collection, getDocs } = this._lib();
@@ -1625,14 +1613,17 @@ const DB = {
       if(ARRAY_COLLECTIONS.includes(k)){
         const snap = await getDocs(collection(db, k));
         if(snap.empty){
-          // fallback to localStorage if Firestore is empty
-          return LS.get(k, fallback);
+          // Firestore empty — use localStorage (may have data written before FB connected)
+          const ls = LS.get(k, null);
+          return (ls && Array.isArray(ls) && ls.length > 0) ? ls : fallback;
         }
         return snap.docs.map(d=>({ _id: d.id, ...d.data() }));
       } else {
         const snap = await getDoc(doc(db,"_config",k));
         if(snap.exists()) return snap.data().value;
-        return LS.get(k, fallback);
+        // Not in Firestore yet — check localStorage
+        const ls = LS.get(k, null);
+        return (ls !== null && ls !== undefined) ? ls : fallback;
       }
     } catch(e){
       console.warn("DB.get fallback to LS:",k,e.message);
@@ -1641,24 +1632,33 @@ const DB = {
   },
 
   async set(k, v){
-    // Always write to localStorage first (instant + reliable)
+    // Always write to localStorage first (instant + reliable fallback)
     LS.set(k, v);
     if(!this._fbOk()) return;
     try {
       const { doc, setDoc, collection, addDoc, getDocs, deleteDoc } = this._lib();
       const db = this._db();
       if(ARRAY_COLLECTIONS.includes(k)){
+        // For large arrays, batch delete + re-add
         const snap = await getDocs(collection(db, k));
         const deletes = snap.docs.map(d=>deleteDoc(doc(db,k,d.id)));
         await Promise.all(deletes);
-        if(Array.isArray(v)){
-          const adds = v.map(item=>addDoc(collection(db,k), item));
-          await Promise.all(adds);
+        if(Array.isArray(v) && v.length > 0){
+          // Write in chunks of 50 to avoid Firestore limits
+          const chunks = [];
+          for(let i=0;i<v.length;i+=50) chunks.push(v.slice(i,i+50));
+          for(const chunk of chunks){
+            await Promise.all(chunk.map(item=>addDoc(collection(db,k), item)));
+          }
         }
       } else {
-        await setDoc(doc(db,"_config",k),{ value: v });
+        // Non-array: store as a single doc in _config collection
+        await setDoc(doc(db,"_config",k),{ value: v, updatedAt: new Date().toISOString() });
       }
-    } catch(e){ console.warn("DB.set Firebase write failed, localStorage used:",k); }
+    } catch(e){
+      console.error("DB.set Firestore write failed for key:",k,"Error:",e.message);
+      // Data is safe in localStorage even if Firestore fails
+    }
   },
 
   // ── optimised single-record ops ─────────────────────────────────────────
@@ -1701,8 +1701,13 @@ async function cacheAll(){
 
 async function refreshCache(...keys){
   if(!keys.length) return cacheAll();
+  // If keys are already in CACHE (just written), no need to re-read from DB.
+  // Only re-read if the key is NOT in cache (cold start).
   await Promise.all(keys.map(async k=>{
-    CACHE[k] = await DB.get(k, ARRAY_COLLECTIONS.includes(k) ? [] : null);
+    if(CACHE[k] === undefined || CACHE[k] === null){
+      CACHE[k] = await DB.get(k, ARRAY_COLLECTIONS.includes(k) ? [] : null);
+    }
+    // else: cache already has the freshly-written value, trust it
   }));
 }
 
@@ -1787,7 +1792,11 @@ const IMG4="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=fo
 const IMG5="https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1200&q=80";
 
 async function seedData(){
-  if(SDB.get("initialized",false))return;
+  // Check BOTH localStorage and Firestore before seeding — never overwrite real data
+  if(LS.get("initialized",false))return;
+  // Also check if users already exist (extra safety guard)
+  const existingUsers=SDB.get("users",[]);
+  if(existingUsers.length>0){LS.set("initialized",true);return;}
   const users=[
     {id:1,name:"Platform Admin",email:"admin@goldenestate.ph",phone:"09170000001",password:"admin123",role:"admin",status:"active",verified:true,joined:"2026-04-01"},
     {id:2,name:"Developer",email:"developer@goldenestate.ph",phone:"09170000002",password:"developer123",role:"developer",status:"active",verified:true,joined:"2026-04-01"},
@@ -1854,10 +1863,49 @@ function switchAuth(mode){
   const l=mode==="login";
   document.getElementById("login-tab").classList.toggle("active",l);
   document.getElementById("register-tab").classList.toggle("active",!l);
+  document.getElementById("register-tab").style.display=''; // always restore
   document.getElementById("login-panel").classList.toggle("hidden",!l);
   document.getElementById("register-panel").classList.toggle("hidden",l);
   document.getElementById("forgot-panel").classList.add("hidden");
   if(!l){ setRegRole("client"); }
+}
+function openClientLogin(){
+  showPage('auth');
+  setTimeout(()=>{
+    switchAuth('login');
+    const title=document.getElementById('auth-modal-title');
+    const sub=document.getElementById('auth-modal-sub');
+    const id=document.getElementById('login-identifier');
+    const regTab=document.getElementById('register-tab');
+    if(title) title.textContent='Welcome Back';
+    if(sub) sub.textContent='Sign in to your client account';
+    if(id){ id.placeholder='your@email.com'; id.value=''; id.focus(); }
+    // Show register tab for clients
+    if(regTab) regTab.style.display='';
+  }, 60);
+}
+function openStaffLogin(){
+  showPage('auth');
+  setTimeout(()=>{
+    switchAuth('login');
+    const title=document.getElementById('auth-modal-title');
+    const sub=document.getElementById('auth-modal-sub');
+    const id=document.getElementById('login-identifier');
+    const regTab=document.getElementById('register-tab');
+    if(title) title.textContent='Staff & Admin Sign In';
+    if(sub) sub.textContent='Enter your staff or admin credentials';
+    if(id){ id.placeholder='staff@goldenestate.ph'; id.value=''; id.focus(); }
+    // Hide register tab for staff (staff can't self-register)
+    if(regTab) regTab.style.display='none';
+  }, 60);
+}
+function openCreateAccount(){
+  showPage('auth');
+  setTimeout(()=>{
+    switchAuth('register');
+    const regTab=document.getElementById('register-tab');
+    if(regTab) regTab.style.display='';
+  }, 60);
 }
 function goActivationStep(step){document.querySelectorAll(".activation-panel").forEach(p=>p.classList.remove("active"));const ap=document.getElementById("activation-panel-"+step);if(ap)ap.classList.add("active");document.querySelectorAll(".activation-step").forEach(i=>i.classList.remove("active"));const as=document.getElementById("step-"+step);if(as)as.classList.add("active")}
 function syncActivationVerificationMethod(){
@@ -2284,11 +2332,16 @@ function updateBadges(){
   // Notif count badge
   const nc=document.getElementById(role+"-notif-count");
   if(nc){nc.textContent=unread;nc.style.display=unread>0?"flex":"none";}
-  // Admin pending approvals
+  // Admin pending approvals + contracts to verify
   if(role==="admin"||role==="developer"){
     const pending=SDB.get("users",[]).filter(u=>u.role==="agent"&&u.verificationStatus==="pending").length;
+    const contractsPending=SDB.get("contracts",[]).filter(c=>contractStatusFlow(c)==="agent_signed").length;
     const pb=document.getElementById("admin-pending-badge");
     if(pb){pb.textContent=pending;pb.style.display=pending>0?"":"none";}
+    // Show contract verify badge on the notif count
+    const totalAlert=unread+contractsPending;
+    const nc2=document.getElementById(role+"-notif-count");
+    if(nc2){nc2.textContent=totalAlert;nc2.style.display=totalAlert>0?"flex":"none";}
   }
   renderNotifList(role);
 }
@@ -2571,7 +2624,9 @@ function openProperty(pid){
   const props=SDB.get("properties",[]);
   const p=props.find(x=>x.id===pid);if(!p)return;
   p.views=Number(p.views||0)+1;SDB.set("properties",props);
-  const visitors=SDB.get("propertyVisitors",[]);visitors.push({id:Date.now(),propertyId:pid,sessionId:getSessionId(),time:nowLabel()});SDB.set("propertyVisitors",visitors);
+  const visitors=SDB.get("propertyVisitors",[]);visitors.push({id:Date.now(),propertyId:pid,sessionId:getOrCreateSession(),time:nowLabel(),userId:currentUser?.id||null});SDB.set("propertyVisitors",visitors);
+  // Re-render cards so view badge updates without needing a refresh
+  setTimeout(()=>renderHome(),300);
   const agent=SDB.get("users",[]).find(u=>u.id===p.agentId);
   document.getElementById("modal-title").textContent=p.title;
   document.getElementById("modal-subtitle").textContent=p.fullAddress;
@@ -3172,6 +3227,45 @@ function filterChatRows(scope,status,btn){
   btn?.classList.add("active");
   document.querySelectorAll(`.${scope}-chat-row`).forEach(row=>{row.style.display=(status==="All"||row.dataset.status===status)?"":"none";});
 }
+function renderFirebaseSetupPanel(){
+  const cfg = SDB.get("siteConfig",{});
+  const fbOk = window._fbReady && window._fbDb;
+  return `<div class="dashboard-card" style="margin-bottom:1rem;border:1px solid ${fbOk?"rgba(22,163,74,.4)":"rgba(239,68,68,.4)"};background:${fbOk?"rgba(22,163,74,.06)":"rgba(239,68,68,.06)"};">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
+      <span style="font-size:1.8rem;">${fbOk?"✅":"⚠️"}</span>
+      <div>
+        <h3 style="margin:0;color:${fbOk?"#86efac":"#fca5a5"};">Firebase Status: ${fbOk?"Connected & Active":"Not Connected"}</h3>
+        <p class="muted" style="font-size:.82rem;margin:.2rem 0 0;">
+          ${fbOk
+            ? "All data (users, properties, messages, settings) is saved to Firestore and persists for every visitor across all devices."
+            : "Firebase is not connected. Data is saved only in this browser's localStorage — changes won't persist for other visitors or after clearing the browser."}
+        </p>
+      </div>
+    </div>
+    ${fbOk ? `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.6rem;">
+      <div class="stat-card"><span class="dash-label">Project ID</span><strong style="font-size:.82rem;word-break:break-all;">golden-estate-realty</strong></div>
+      <div class="stat-card"><span class="dash-label">Storage</span><strong>Firestore</strong></div>
+      <div class="stat-card"><span class="dash-label">Persistence</span><strong style="color:#86efac;">✅ Cloud</strong></div>
+    </div>` : `
+    <div class="info-box" style="margin-bottom:1rem;">
+      <strong>To make your site fully functional for real users:</strong><br>
+      1. Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--brand);">console.firebase.google.com</a><br>
+      2. Create a project → Add a Web App<br>
+      3. Enable Firestore Database (start in test mode)<br>
+      4. Copy your firebaseConfig and replace it at the top of this HTML file<br>
+      5. Host on GitHub Pages, Netlify, or Vercel
+    </div>`}
+    <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--line);">
+      <p class="muted" style="font-size:.8rem;margin:0;">
+        <strong>⚠️ Important:</strong> Before going live, go to Firebase Console → Firestore → Rules and set proper security rules.
+        The default test mode expires after 30 days and allows anyone to read/write your database.
+        Contact a developer to set up proper authentication rules.
+      </p>
+    </div>
+  </div>`;
+}
+
 function renderFeatureCoveragePanel(){
   const items=[
     "Client user management in CRM-style profile panels",
@@ -3347,38 +3441,351 @@ function saveContractDraft(resId){
   };
   if(file){const reader=new FileReader();reader.onload=e=>finish(e.target.result);reader.readAsDataURL(file)}else finish();
 }
-function contractHtml(c){
-  return`<div class="contract-paper" id="contract-print-${c.id}"><h2>REAL ESTATE PURCHASE AGREEMENT</h2><p>This Real Estate Purchase Agreement is entered into as of <strong>${safeDate(c.createdAt)}</strong> by and between:</p><p><strong>Seller / Agent:</strong> ${escapeHtml(c.sellerName)}</p><p><strong>Buyer / Client:</strong> ${escapeHtml(c.buyerName)}</p><p><strong>Property:</strong> ${escapeHtml(c.propertyTitle)}</p><p><strong>Purchase Price:</strong> ${peso(c.price)}</p><p><strong>Payment Option:</strong> ${escapeHtml(c.paymentOption)}</p><p><strong>Reservation / Deposit:</strong> ${peso(c.deposit)}</p><p><strong>Terms:</strong> ${escapeHtml(c.terms)}</p><p>The Buyer and Seller agree that this contract becomes locked once signed by the Buyer.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2rem;"><div><div class="signature-box">${c.signatureData?`<img src="${c.signatureData}" style="max-height:76px;max-width:100%;">`:""}</div><p style="text-align:center;margin-top:.4rem;">${escapeHtml(c.buyerName)}<br>Signature over printed name</p></div><div><div class="signature-box">${c.agentSignatureData?`<img src="${c.agentSignatureData}" style="max-height:76px;max-width:100%;">`:escapeHtml(c.sellerName)}</div><p style="text-align:center;margin-top:.4rem;">${escapeHtml(c.sellerName)}<br>Seller / Agent signature</p></div></div>${c.signedAt?`<p><strong>Signed:</strong> ${c.signedAt}</p>`:""}</div>`;
+function contractStatusFlow(c){
+  // Returns current step: draft → client_signed → agent_signed → verified
+  if(c.adminVerifiedAt) return "verified";
+  if(c.agentSignedAt)   return "agent_signed";
+  if(c.signedAt)        return "client_signed";
+  return "draft";
 }
+
+function contractHtml(c){
+  const step = contractStatusFlow(c);
+  const verifiedBadge = step==="verified"
+    ? `<div style="margin:1.5rem 0;padding:1rem 1.5rem;background:linear-gradient(135deg,#166534,#14532d);border-radius:14px;display:flex;align-items:center;gap:.75rem;">
+        <span style="font-size:1.8rem;">✅</span>
+        <div><strong style="color:#86efac;font-size:1rem;">ADMIN VERIFIED</strong><br>
+        <span style="color:#bbf7d0;font-size:.82rem;">Verified by ${escapeHtml(c.adminVerifierName||"Admin")} on ${c.adminVerifiedAt}</span></div>
+       </div>` : "";
+
+  const stepIndicator = `<div style="display:flex;align-items:center;gap:0;margin-bottom:1.5rem;font-size:.78rem;">
+    ${["Draft","Client Signed","Agent Signed","Admin Verified"].map((label,i)=>{
+      const statuses=["draft","client_signed","agent_signed","verified"];
+      const done = statuses.indexOf(step) >= i;
+      const active = statuses[i] === step;
+      return `<div style="display:flex;align-items:center;flex:1;">
+        <div style="display:flex;flex-direction:column;align-items:center;flex:1;">
+          <div style="width:28px;height:28px;border-radius:50%;background:${done?"var(--brand)":"rgba(255,255,255,.15)"};color:${done?"#000":"rgba(255,255,255,.4)"};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;border:2px solid ${active?"var(--brand)":"transparent"};">${done&&!active?"✓":i+1}</div>
+          <span style="margin-top:.3rem;color:${done?"var(--brand)":"rgba(255,255,255,.4)"};text-align:center;font-size:.7rem;">${label}</span>
+        </div>
+        ${i<3?`<div style="height:2px;flex:0 0 20px;background:${statuses.indexOf(step)>i?"var(--brand)":"rgba(255,255,255,.15)"};margin-bottom:1.2rem;"></div>`:""}
+      </div>`;
+    }).join("")}
+  </div>`;
+
+  return`<div class="contract-paper" id="contract-print-${c.id}">
+    ${stepIndicator}
+    ${verifiedBadge}
+    <h2>REAL ESTATE PURCHASE AGREEMENT</h2>
+    <p>This Real Estate Purchase Agreement is entered into as of <strong>${safeDate(c.createdAt)}</strong> by and between:</p>
+    <p><strong>Seller / Agent:</strong> ${escapeHtml(c.sellerName)}</p>
+    <p><strong>Buyer / Client:</strong> ${escapeHtml(c.buyerName)}</p>
+    <p><strong>Property:</strong> ${escapeHtml(c.propertyTitle)}</p>
+    <p><strong>Purchase Price:</strong> ${peso(c.price)}</p>
+    <p><strong>Payment Option:</strong> ${escapeHtml(c.paymentOption)}</p>
+    <p><strong>Reservation / Deposit:</strong> ${peso(c.deposit)}</p>
+    <p><strong>Terms:</strong> ${escapeHtml(c.terms)}</p>
+    <p style="margin-top:.75rem;font-size:.85rem;color:var(--muted);">This contract requires: (1) Client signature, (2) Agent signature, and (3) Admin verification to be fully executed.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-top:2rem;">
+      <div>
+        <div class="signature-box">${c.signatureData?`<img src="${c.signatureData}" style="max-height:76px;max-width:100%;">`:""}</div>
+        <p style="text-align:center;margin-top:.4rem;font-size:.82rem;">${escapeHtml(c.buyerName)}<br><span style="color:var(--muted);font-size:.74rem;">Buyer / Client</span>${c.signedAt?`<br><span style="color:var(--brand);font-size:.72rem;">✓ Signed ${c.signedAt}</span>`:""}</p>
+      </div>
+      <div>
+        <div class="signature-box">${c.agentSignatureData?`<img src="${c.agentSignatureData}" style="max-height:76px;max-width:100%;">`:""}</div>
+        <p style="text-align:center;margin-top:.4rem;font-size:.82rem;">${escapeHtml(c.sellerName)}<br><span style="color:var(--muted);font-size:.74rem;">Seller / Agent</span>${c.agentSignedAt?`<br><span style="color:var(--brand);font-size:.72rem;">✓ Signed ${c.agentSignedAt}</span>`:""}</p>
+      </div>
+      <div>
+        <div class="signature-box" style="${c.adminVerifiedAt?"border-color:#16a34a;":""}">${c.adminVerifiedAt?`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:2rem;">✅</div>`:""}</div>
+        <p style="text-align:center;margin-top:.4rem;font-size:.82rem;">${escapeHtml(c.adminVerifierName||"Administrator")}<br><span style="color:var(--muted);font-size:.74rem;">Admin Verification</span>${c.adminVerifiedAt?`<br><span style="color:#16a34a;font-size:.72rem;">✓ Verified ${c.adminVerifiedAt}</span>`:""}</p>
+      </div>
+    </div>
+    ${c.signedAt?`<p style="margin-top:1rem;font-size:.8rem;color:var(--muted);"><strong>Client signed:</strong> ${c.signedAt}</p>`:""}
+    ${c.agentSignedAt?`<p style="font-size:.8rem;color:var(--muted);"><strong>Agent signed:</strong> ${c.agentSignedAt}</p>`:""}
+    ${c.adminVerifiedAt?`<p style="font-size:.8rem;color:#16a34a;"><strong>Admin verified:</strong> ${c.adminVerifiedAt}</p>`:""}
+  </div>`;
+}
+
 function openContractView(id){
   const c=SDB.get("contracts",[]).find(x=>x.id===id);if(!c)return;
-  const canSign=currentUser?.role==="client"&&currentUser.id===c.clientId&&!c.signedAt;
+  const step = contractStatusFlow(c);
+  const role = currentUser?.role;
+
+  // Determine what action panel to show
+  let actionHtml = "";
+
+  // CLIENT: can sign if step is "draft" and they are the buyer
+  if(role==="client" && currentUser.id===c.clientId && step==="draft"){
+    actionHtml=`<div class="panel" style="margin-top:1rem;background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.3);">
+      <h3 style="margin-bottom:.75rem;">✍️ Your Signature Required</h3>
+      <p class="muted" style="margin-bottom:.75rem;font-size:.85rem;">Upload a photo of your handwritten signature to proceed.</p>
+      <div class="field"><label>Upload signature image</label><input id="contract-signature-file" type="file" accept="image/*"></div>
+      <button class="btn btn-brand" style="margin-top:.5rem;" onclick="signContractClient(${c.id})">✅ Submit My Signature</button>
+    </div>`;
+  }
+  // AGENT: can sign after client signs
+  else if(role==="agent" && currentUser.id===c.agentId && step==="client_signed"){
+    actionHtml=`<div class="panel" style="margin-top:1rem;background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.3);">
+      <h3 style="margin-bottom:.75rem;">✍️ Agent Signature Required</h3>
+      <p class="muted" style="margin-bottom:.75rem;font-size:.85rem;">The client has signed. Now upload your own signature to countersign this contract.</p>
+      <div class="field"><label>Upload your signature image</label><input id="contract-agent-sig-file" type="file" accept="image/*"></div>
+      <button class="btn btn-brand" style="margin-top:.5rem;" onclick="signContractAgent(${c.id})">✅ Submit My Signature</button>
+    </div>`;
+  }
+  // ADMIN: can verify after both parties signed
+  else if((role==="admin"||role==="developer") && step==="agent_signed"){
+    actionHtml=`<div class="panel" style="margin-top:1rem;background:rgba(22,163,74,.08);border:1px solid rgba(22,163,74,.3);">
+      <h3 style="margin-bottom:.75rem;">🔍 Admin Verification</h3>
+      <p class="muted" style="margin-bottom:.75rem;font-size:.85rem;">Both parties have signed. Review the contract and verify it to make it fully executed.</p>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+        <button class="btn btn-success" onclick="verifyContract(${c.id})">✅ Verify & Approve Contract</button>
+        <button class="btn btn-danger" onclick="rejectContract(${c.id})">❌ Reject Contract</button>
+      </div>
+    </div>`;
+  }
+  // Waiting states
+  else if(step==="draft" && role!=="client"){
+    actionHtml=`<div class="info-box" style="margin-top:1rem;">⏳ Waiting for client to sign first.</div>`;
+  } else if(step==="client_signed" && role!=="agent"){
+    actionHtml=`<div class="info-box" style="margin-top:1rem;">⏳ Client has signed. Waiting for agent countersignature.</div>`;
+  } else if(step==="agent_signed" && role!=="admin" && role!=="developer"){
+    actionHtml=`<div class="info-box" style="margin-top:1rem;">⏳ Both parties signed. Waiting for admin verification.</div>`;
+  } else if(step==="verified"){
+    actionHtml=`<div class="info-box" style="margin-top:1rem;background:rgba(22,163,74,.1);border-color:#16a34a;color:#86efac;">✅ This contract is fully verified and executed.</div>`;
+  }
+
+  const subtitle = {draft:"Draft – Awaiting client signature",client_signed:"Client signed – Awaiting agent signature",agent_signed:"Both signed – Awaiting admin verification",verified:"✅ Fully Verified & Executed"}[step]||"Contract";
+
   document.getElementById("workflow-modal-title").textContent="Contract";
-  document.getElementById("workflow-modal-subtitle").textContent=c.signedAt?"Signed and locked":"Draft";
-  document.getElementById("workflow-modal-body").innerHTML=`${contractHtml(c)}${canSign?`<div class="panel" style="margin-top:1rem;"><div class="field"><label>Attach handwritten signature</label><input id="contract-signature-file" type="file" accept="image/*"></div><button class="btn btn-brand" onclick="signContract(${c.id})">Submit Signature and Sign</button></div>`:""}<div class="stack-actions" style="margin-top:1rem;"><button class="btn btn-outline" onclick="downloadContract(${c.id})">Download Contract</button></div>`;
+  document.getElementById("workflow-modal-subtitle").textContent=subtitle;
+  document.getElementById("workflow-modal-body").innerHTML=`${contractHtml(c)}${actionHtml}<div class="stack-actions" style="margin-top:1rem;"><button class="btn btn-outline" onclick="downloadContract(${c.id})">⬇️ Download Contract</button></div>`;
   document.getElementById("workflow-modal").classList.add("open");
 }
-function signContract(id){
-  const file=document.getElementById("contract-signature-file")?.files?.[0];if(!file){notify("Attach your handwritten signature image.","error");return}
-  const reader=new FileReader();reader.onload=e=>{const contracts=SDB.get("contracts",[]);const c=contracts.find(x=>x.id===id);if(!c)return;c.signatureData=e.target.result;c.signedAt=nowLabel();c.status="Signed";SDB.set("contracts",contracts);autoTransaction({type:"Signed Contract",txStage:"Contract",clientId:c.clientId,clientName:c.buyerName,agentId:c.agentId,propertyId:c.propertyId,propertyTitle:c.propertyTitle,amount:0,description:"Client signed contract with handwritten signature.",status:"Signed",proof:e.target.result});openContractView(id);renderDashboards();};reader.readAsDataURL(file);
+
+function signContractClient(id){
+  const file=document.getElementById("contract-signature-file")?.files?.[0];
+  if(!file){notify("Please attach your handwritten signature image.","error");return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const contracts=SDB.get("contracts",[]);
+    const c=contracts.find(x=>x.id===id);if(!c)return;
+    c.signatureData=e.target.result;
+    c.signedAt=nowLabel();
+    c.status="Client Signed";
+    c.updatedAt=nowLabel();
+    SDB.set("contracts",contracts);
+    autoTransaction({type:"Client Signature",txStage:"Contract",clientId:c.clientId,clientName:c.buyerName,agentId:c.agentId,propertyId:c.propertyId,propertyTitle:c.propertyTitle,amount:0,description:"Client signed the contract. Awaiting agent countersignature.",status:"Client Signed",proof:e.target.result});
+    notify("Signature submitted! The agent will now countersign.","success");
+    openContractView(id);renderDashboards();
+  };
+  reader.readAsDataURL(file);
 }
+
+function signContractAgent(id){
+  const file=document.getElementById("contract-agent-sig-file")?.files?.[0];
+  if(!file){notify("Please attach your signature image.","error");return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const contracts=SDB.get("contracts",[]);
+    const c=contracts.find(x=>x.id===id);if(!c)return;
+    c.agentSignatureData=e.target.result;
+    c.agentSignedAt=nowLabel();
+    c.status="Agent Signed";
+    c.updatedAt=nowLabel();
+    SDB.set("contracts",contracts);
+    autoTransaction({type:"Agent Signature",txStage:"Contract",clientId:c.clientId,clientName:c.buyerName,agentId:c.agentId,propertyId:c.propertyId,propertyTitle:c.propertyTitle,amount:0,description:"Agent countersigned the contract. Awaiting admin verification.",status:"Agent Signed"});
+    notify("Agent signature submitted! Waiting for admin verification.","success");
+    openContractView(id);renderDashboards();
+  };
+  reader.readAsDataURL(file);
+}
+
+function verifyContract(id){
+  if(!confirm("Verify and approve this contract? This marks it as fully executed."))return;
+  const contracts=SDB.get("contracts",[]);
+  const c=contracts.find(x=>x.id===id);if(!c)return;
+  c.adminVerifiedAt=nowLabel();
+  c.adminVerifierName=currentUser?.name||"Admin";
+  c.adminVerifierId=currentUser?.id;
+  c.status="Verified";
+  c.updatedAt=nowLabel();
+  SDB.set("contracts",contracts);
+  autoTransaction({type:"Contract Verified",txStage:"Contract",clientId:c.clientId,clientName:c.buyerName,agentId:c.agentId,propertyId:c.propertyId,propertyTitle:c.propertyTitle,amount:c.price||0,description:`Contract verified and approved by admin ${c.adminVerifierName}.`,status:"Verified"});
+  notify("Contract verified successfully! It is now fully executed.","success");
+  openContractView(id);renderDashboards();
+}
+
+function rejectContract(id){
+  const reason=prompt("Reason for rejection (optional):");
+  const contracts=SDB.get("contracts",[]);
+  const c=contracts.find(x=>x.id===id);if(!c)return;
+  c.status="Rejected";
+  c.rejectedAt=nowLabel();
+  c.rejectedBy=currentUser?.name||"Admin";
+  c.rejectionReason=reason||"";
+  c.updatedAt=nowLabel();
+  SDB.set("contracts",contracts);
+  autoTransaction({type:"Contract Rejected",txStage:"Contract",clientId:c.clientId,clientName:c.buyerName,agentId:c.agentId,propertyId:c.propertyId,propertyTitle:c.propertyTitle,amount:0,description:`Contract rejected by admin. Reason: ${reason||"none"}.`,status:"Rejected"});
+  notify("Contract has been rejected.","error");
+  openContractView(id);renderDashboards();
+}
+
+// Legacy alias (old signContract calls)
+function signContract(id){ signContractClient(id); }
 function downloadContract(id){
   const c=SDB.get("contracts",[]).find(x=>x.id===id);if(!c)return;
   const html=`<!doctype html><html><head><meta charset="utf-8"><title>Contract</title></head><body>${contractHtml(c)}<script>window.print()<\/script></body></html>`;
   const blob=new Blob([html],{type:"text/html"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`contract-${id}.html`;a.click();
 }
+// ── Shared tabbed profile state ───────────────────────────────────────────────
+window._profileTab = "info";
+function _switchProfileTab(tab){
+  window._profileTab = tab;
+  document.querySelectorAll(".profile-tab-btn").forEach(b=>{
+    b.classList.toggle("active", b.dataset.tab===tab);
+    b.style.borderBottom = b.dataset.tab===tab ? "2px solid var(--brand)" : "2px solid transparent";
+    b.style.color = b.dataset.tab===tab ? "var(--brand)" : "rgba(255,255,255,.55)";
+  });
+  document.querySelectorAll(".profile-tab-panel").forEach(p=>{
+    p.style.display = p.dataset.tab===tab ? "block" : "none";
+  });
+}
+function _profileTabBar(tabs){
+  return `<div style="display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:1rem;overflow-x:auto;">
+    ${tabs.map(([key,label])=>`<button class="profile-tab-btn" data-tab="${key}" onclick="_switchProfileTab('${key}')"
+      style="background:none;border:none;border-bottom:2px solid ${window._profileTab===key?"var(--brand)":"transparent"};
+      color:${window._profileTab===key?"var(--brand)":"rgba(255,255,255,.55)"};
+      padding:.65rem 1.1rem;cursor:pointer;font-size:.88rem;font-weight:600;white-space:nowrap;transition:.15s;">
+      ${label}
+    </button>`).join("")}
+  </div>`;
+}
+
 function openClientProfileModal(clientId){
+  window._profileTab = "info";
   const u=SDB.get("users",[]).find(x=>x.id===clientId);if(!u)return;
   if(u.role!=="client")return openUserProfileModal(clientId);
-  const reservations=normalizeReservationDates().filter(r=>r.clientId===clientId);
+
+  const reservations = normalizeReservationDates().filter(r=>r.clientId===clientId);
+  const txns = SDB.get("transactions",[]).filter(t=>t.clientId===clientId);
+  const contracts = SDB.get("contracts",[]).filter(c=>c.clientId===clientId);
+  const messages = SDB.get("messages",[]).filter(m=>m.fromId===clientId||m.toId===clientId);
+  const prog = getClientProgress(clientId);
+  const allUsers = SDB.get("users",[]);
+
+  // Build chat threads grouped by other user
+  const chatPartnerIds = [...new Set(messages.map(m=>m.fromId===clientId?m.toId:m.fromId))];
+  const chatThreadsHtml = chatPartnerIds.length
+    ? chatPartnerIds.map(pid=>{
+        const partner = allUsers.find(x=>x.id===pid)||{name:"Unknown",role:""};
+        const thread = messages.filter(m=>(m.fromId===clientId&&m.toId===pid)||(m.toId===clientId&&m.fromId===pid));
+        return `<div class="panel" style="margin-bottom:.75rem;">
+          <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem;">
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;">${escapeHtml((partner.name||"?").charAt(0))}</div>
+            <div><strong>${escapeHtml(partner.name)}</strong> <span class="badge badge-brand" style="font-size:.7rem;">${escapeHtml(partner.role)}</span></div>
+          </div>
+          <div style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:.4rem;padding:.5rem;background:rgba(0,0,0,.2);border-radius:10px;">
+            ${thread.map(m=>{
+              const mine=m.fromId===clientId;
+              return`<div style="align-self:${mine?"flex-end":"flex-start"};background:${mine?"rgba(201,162,39,.25)":"rgba(255,255,255,.08)"};
+                padding:.45rem .75rem;border-radius:12px;max-width:80%;font-size:.83rem;">
+                <span style="display:block;font-size:.7rem;color:var(--muted);margin-bottom:.2rem;">${mine?"You":escapeHtml(partner.name)} · ${m.createdAt||""}</span>
+                ${escapeHtml(m.message||"")}
+              </div>`;
+            }).join("")}
+          </div>
+        </div>`;
+      }).join("")
+    : '<p class="muted">No messages yet.</p>';
+
   document.getElementById("workflow-modal-title").textContent="Client Profile";
   document.getElementById("workflow-modal-subtitle").textContent=u.name;
-  document.getElementById("workflow-modal-body").innerHTML=`<div class="panel"><div class="form-grid"><div><strong>Name</strong><p>${escapeHtml(u.name)}</p></div><div><strong>Email</strong><p>${escapeHtml(u.email||"—")}</p></div><div><strong>Phone</strong><p>${escapeHtml(u.phone||"—")}</p></div><div><strong>City</strong><p>${escapeHtml(u.city||"—")}</p></div></div></div><div class="panel"><h3>Transactions with this client</h3>${renderTransactionsTable(SDB.get("transactions",[]).filter(t=>t.clientId===clientId))}</div><div class="panel"><h3>Reservations</h3><div class="table-wrap"><table><tr><th>Property</th><th>Schedule</th><th>Status</th></tr>${reservations.map(r=>`<tr><td>${escapeHtml(r.propertyTitle)}</td><td>${reservationLabel(r)}</td><td>${statusBadge(r.status)}</td></tr>`).join("")}</table></div></div>`;
+  document.getElementById("workflow-modal-body").innerHTML=`
+    <div style="display:flex;align-items:center;gap:1rem;padding:1rem;background:rgba(255,255,255,.04);border-radius:14px;margin-bottom:1rem;">
+      <div style="width:56px;height:56px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;color:#000;flex-shrink:0;">${escapeHtml((u.name||"?").charAt(0))}</div>
+      <div style="flex:1;">
+        <h2 style="margin:0;font-size:1.2rem;">${escapeHtml(u.name)}</h2>
+        <p class="muted" style="margin:.2rem 0;">${escapeHtml(u.email||"No email")} ${u.phone?`· ${escapeHtml(u.phone)}`:""}</p>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.3rem;">
+          <span class="badge badge-brand">Client</span>
+          ${statusBadge(u.status||"active")}
+          <span style="font-size:.78rem;background:rgba(255,255,255,.08);padding:.2rem .6rem;border-radius:999px;">${prog.icon} ${prog.stage}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.4rem;">
+        <button class="btn btn-outline btn-small" onclick="toggleSuspendUser(${u.id});closeModal('workflow-modal');">${u.status==="suspended"?"Unsuspend":"Suspend"}</button>
+      </div>
+    </div>
+
+    ${_profileTabBar([["info","👤 Info"],["transactions","💰 Transactions ("+txns.length+")"],["appointments","📅 Appointments ("+reservations.length+")"],["contracts","📄 Contracts ("+contracts.length+")"],["chats","💬 Chats ("+chatPartnerIds.length+")"]])}
+
+    <div class="profile-tab-panel" data-tab="info">
+      <div class="form-grid">
+        <div class="panel"><strong>Full Name</strong><p>${escapeHtml(u.name)}</p></div>
+        <div class="panel"><strong>Email</strong><p>${escapeHtml(u.email||"—")}</p></div>
+        <div class="panel"><strong>Phone</strong><p>${escapeHtml(u.phone||"—")}</p></div>
+        <div class="panel"><strong>City</strong><p>${escapeHtml(u.city||"—")}</p></div>
+        <div class="panel"><strong>Joined</strong><p>${safeDate(u.joined)}</p></div>
+        <div class="panel"><strong>Buyer Progress</strong><p>${prog.icon} ${prog.stage}</p></div>
+      </div>
+    </div>
+
+    <div class="profile-tab-panel" data-tab="transactions" style="display:none;">
+      <h3 style="margin-bottom:.75rem;">💰 All Transactions</h3>
+      ${renderTransactionsTable(txns)}
+    </div>
+
+    <div class="profile-tab-panel" data-tab="appointments" style="display:none;">
+      <h3 style="margin-bottom:.75rem;">📅 All Appointments</h3>
+      ${reservations.length
+        ?`<div class="table-wrap"><table>
+            <tr><th>Property</th><th>Agent</th><th>Schedule</th><th>Status</th></tr>
+            ${reservations.map(r=>`<tr>
+              <td>${escapeHtml(r.propertyTitle)}</td>
+              <td>${escapeHtml(r.agentName||"—")}</td>
+              <td>${safeDateTime(getResDate(r),getResTime(r))}</td>
+              <td>${statusBadge(r.status)}</td>
+            </tr>`).join("")}
+          </table></div>`
+        :'<p class="muted">No appointments yet.</p>'}
+    </div>
+
+    <div class="profile-tab-panel" data-tab="contracts" style="display:none;">
+      <h3 style="margin-bottom:.75rem;">📄 Contracts</h3>
+      ${renderContractsList(c=>c.clientId===clientId)}
+    </div>
+
+    <div class="profile-tab-panel" data-tab="chats" style="display:none;">
+      <h3 style="margin-bottom:.75rem;">💬 All Conversations</h3>
+      ${chatThreadsHtml}
+    </div>`;
+
   document.getElementById("workflow-modal").classList.add("open");
+  _switchProfileTab("info");
 }
 function renderContractsList(filterFn){
   const contracts=SDB.get("contracts",[]).filter(filterFn);
-  return contracts.length?`<div class="table-wrap"><table><tr><th>Property</th><th>Client</th><th>Status</th><th>Updated</th><th>Action</th></tr>${contracts.map(c=>`<tr><td>${escapeHtml(c.propertyTitle)}</td><td>${escapeHtml(c.buyerName)}</td><td>${statusBadge(c.status)}</td><td>${safeDate(c.updatedAt||c.createdAt)}</td><td><button class="btn btn-outline btn-small" onclick="openContractView(${c.id})">View</button></td></tr>`).join("")}</table></div>`:'<p class="muted">No contracts yet.</p>';
+  if(!contracts.length) return '<p class="muted">No contracts yet.</p>';
+  return`<div class="table-wrap"><table>
+    <tr><th>Property</th><th>Client</th><th>Agent</th><th>Step</th><th>Status</th><th>Updated</th><th>Action</th></tr>
+    ${contracts.map(c=>{
+      const step=contractStatusFlow(c);
+      const stepLabel={draft:"1/3 Draft",client_signed:"2/3 Client ✓",agent_signed:"3/3 Agent ✓",verified:"✅ Complete"}[step]||step;
+      const stepColor={draft:"var(--muted)",client_signed:"var(--brand)",agent_signed:"#f59e0b",verified:"#16a34a"}[step]||"";
+      return`<tr>
+        <td>${escapeHtml(c.propertyTitle)}</td>
+        <td>${escapeHtml(c.buyerName)}</td>
+        <td>${escapeHtml(c.sellerName)}</td>
+        <td><span style="color:${stepColor};font-weight:600;font-size:.8rem;">${stepLabel}</span></td>
+        <td>${statusBadge(c.status)}</td>
+        <td>${safeDate(c.updatedAt||c.createdAt)}</td>
+        <td>${step==="agent_signed"&&(currentUser?.role==="admin"||currentUser?.role==="developer")
+          ?`<button class="btn btn-success btn-small" onclick="openContractView(${c.id})">🔍 Verify</button>`
+          :`<button class="btn btn-outline btn-small" onclick="openContractView(${c.id})">View</button>`}
+        </td>
+      </tr>`;
+    }).join("")}
+  </table></div>`;
 }
 const DASH_FILTERS={};
 function recordDateValue(item){return item.createdAt||item.scheduledDate||item.appointmentDate||item.updatedAt||item.visitedAt||item.paidAt||""}
@@ -3403,10 +3810,20 @@ function rangeToolbar(key,rerenderFn){
   return`<div class="range-toolbar">${options.map(([v,l])=>`<button class="btn btn-outline btn-small ${active===v?"active":""}" onclick="DASH_FILTERS['${key}']='${v}';${rerenderFn}()">${l}</button>`).join("")}</div>`;
 }
 function archiveTransaction(id){
-  const txns=SDB.get("transactions",[]);const t=txns.find(x=>x.id===id);if(!t)return;t.archived=true;t.archivedAt=nowLabel();SDB.set("transactions",txns);renderDashboards();notify("Transaction archived.","success");
+  const txns=SDB.get("transactions",[]);const t=txns.find(x=>x.id===id);if(!t)return;
+  t.archived=true;t.archivedAt=nowLabel();SDB.set("transactions",txns);renderDashboards();notify("Transaction archived.","success");
+}
+function restoreTransaction(id){
+  const txns=SDB.get("transactions",[]);const t=txns.find(x=>x.id===id);if(!t)return;
+  t.archived=false;delete t.archivedAt;SDB.set("transactions",txns);renderDashboards();notify("Transaction restored.","success");
 }
 function archiveReservation(id){
-  const reservations=normalizeReservationDates();const r=reservations.find(x=>x.id===id);if(!r)return;r.archived=true;r.archivedAt=nowLabel();SDB.set("reservations",reservations);renderDashboards();notify("Appointment archived.","success");
+  const reservations=normalizeReservationDates();const r=reservations.find(x=>x.id===id);if(!r)return;
+  r.archived=true;r.archivedAt=nowLabel();SDB.set("reservations",reservations);renderDashboards();notify("Appointment archived.","success");
+}
+function restoreReservation(id){
+  const reservations=SDB.get("reservations",[]);const r=reservations.find(x=>x.id===id);if(!r)return;
+  r.archived=false;delete r.archivedAt;SDB.set("reservations",reservations);renderDashboards();notify("Appointment restored.","success");
 }
 function renderAgentTimetable(){
   const reservations=normalizeReservationDates().filter(r=>r.agentId===currentUser.id&&r.status!=="Declined"&&r.status!=="Cancelled").sort((a,b)=>(getResDate(a)+getResTime(a)).localeCompare(getResDate(b)+getResTime(b)));
@@ -3541,7 +3958,7 @@ function renderTransactionsTable(transactions, showActions=false){
   const users=SDB.get("users",[]);
   const statusOptions=["Pending","Draft","Confirmed","Completed","Signed","Paid","Cancelled","Declined","Archived"];
   const rows=[...transactions].sort((a,b)=>new Date(recordDateValue(b)||0)-new Date(recordDateValue(a)||0));
-  return`<div class="table-wrap"><table><tr><th>Date</th><th>Stage</th><th>Client</th><th>Contract Contact</th><th>Property</th><th>Amount</th><th>Description</th><th>Status</th>${showActions?'<th>Actions</th>':''}</tr>${rows.map(t=>{const c=users.find(u=>u.id===t.clientId)||{};return`<tr><td>${safeDate(t.createdAt)}</td><td><span class="badge badge-brand">${t.txStage||t.type||"Viewing"}</span></td><td>${escapeHtml(t.clientName||c.name||"—")}</td><td>${escapeHtml(c.email||"—")}<br><span class="muted">${escapeHtml(c.phone||"—")}</span></td><td>${escapeHtml(t.propertyTitle||"—")}</td><td>${t.amount?peso(t.amount):"—"}</td><td>${escapeHtml(t.description||"—")}</td><td>${statusBadge(t.status||"Recorded")}</td>${showActions?`<td><select onchange="setTransactionStatus(${t.id},this.value)" style="padding:.45rem;border:1px solid var(--line);border-radius:10px;background:#fff;">${statusOptions.map(s=>`<option value="${s}" ${(t.status||"Recorded")===s?"selected":""}>${s}</option>`).join("")}</select> <button class="btn btn-outline btn-small" onclick="archiveTransaction(${t.id})">Archive</button></td>`:''}</tr>`}).join("")}</table></div>`;
+  return`<div class="table-wrap"><table><tr><th>Date</th><th>Stage</th><th>Client</th><th>Contract Contact</th><th>Property</th><th>Amount</th><th>Description</th><th>Status</th>${showActions?'<th>Actions</th>':''}</tr>${rows.map(t=>{const c=users.find(u=>u.id===t.clientId)||{};const isArch=!!t.archived;return`<tr style="${isArch?"opacity:.6;":""}"><td>${safeDate(t.createdAt)}${isArch?`<br><span style="font-size:.7rem;color:var(--muted);">Archived ${safeDate(t.archivedAt)}</span>`:""}</td><td><span class="badge badge-brand">${t.txStage||t.type||"Viewing"}</span></td><td>${escapeHtml(t.clientName||c.name||"—")}</td><td>${escapeHtml(c.email||"—")}<br><span class="muted">${escapeHtml(c.phone||"—")}</span></td><td>${escapeHtml(t.propertyTitle||"—")}</td><td>${t.amount?peso(t.amount):"—"}</td><td>${escapeHtml(t.description||"—")}</td><td>${statusBadge(t.status||"Recorded")}</td>${showActions?`<td><div class="stack-actions">${!isArch?`<select onchange="setTransactionStatus(${t.id},this.value)" style="padding:.4rem;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font-size:.8rem;">${statusOptions.map(s=>`<option value="${s}" ${(t.status||"Recorded")===s?"selected":""}>${s}</option>`).join("")}</select>`:""}<button class="btn btn-outline btn-small" onclick="${isArch?`restoreTransaction(${t.id})`:`archiveTransaction(${t.id})`}" style="${isArch?"color:#16a34a;border-color:#16a34a;":""}">${isArch?"↩ Restore":"Archive"}</button></div></td>`:''}</tr>`}).join("")}</table></div>`;
 }
 function setTransactionStatus(id,status){
   const txns=SDB.get("transactions",[]);
@@ -3583,16 +4000,141 @@ function viewStaff(uid){
   openUserProfileModal(uid);
 }
 function openUserProfileModal(uid){
+  window._profileTab = "info";
   const u=SDB.get("users",[]).find(x=>x.id===uid);if(!u)return;
-  const reservations=normalizeReservationDates().filter(r=>r.clientId===uid||r.agentId===uid);
-  const txns=SDB.get("transactions",[]).filter(t=>t.clientId===uid||t.agentId===uid);
-  document.getElementById("workflow-modal-title").textContent="Account Profile";
+
+  const allRes = normalizeReservationDates();
+  const reservations = allRes.filter(r=>r.agentId===uid||r.clientId===uid);
+  const agentRes = allRes.filter(r=>r.agentId===uid);
+  const txns = SDB.get("transactions",[]).filter(t=>t.agentId===uid||t.clientId===uid);
+  const contracts = SDB.get("contracts",[]).filter(c=>c.agentId===uid||c.clientId===uid);
+  const allMessages = SDB.get("messages",[]);
+  const messages = allMessages.filter(m=>m.fromId===uid||m.toId===uid);
+  const allUsers = SDB.get("users",[]);
+
+  // Unique clients this agent has served
+  const clientIds = [...new Set(agentRes.map(r=>r.clientId))];
+  const myClients = clientIds.map(cid=>allUsers.find(x=>x.id===cid)).filter(Boolean);
+
+  // Chat threads
+  const chatPartnerIds = [...new Set(messages.map(m=>m.fromId===uid?m.toId:m.fromId))];
+  const chatThreadsHtml = chatPartnerIds.length
+    ? chatPartnerIds.map(pid=>{
+        const partner = allUsers.find(x=>x.id===pid)||{name:"Unknown",role:""};
+        const thread = messages.filter(m=>(m.fromId===uid&&m.toId===pid)||(m.toId===uid&&m.fromId===pid));
+        return `<div class="panel" style="margin-bottom:.75rem;">
+          <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem;">
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;">${escapeHtml((partner.name||"?").charAt(0))}</div>
+            <div><strong>${escapeHtml(partner.name)}</strong> <span class="badge badge-brand" style="font-size:.7rem;">${escapeHtml(partner.role)}</span></div>
+          </div>
+          <div style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:.4rem;padding:.5rem;background:rgba(0,0,0,.2);border-radius:10px;">
+            ${thread.map(m=>{
+              const mine=m.fromId===uid;
+              return`<div style="align-self:${mine?"flex-end":"flex-start"};background:${mine?"rgba(201,162,39,.25)":"rgba(255,255,255,.08)"};
+                padding:.45rem .75rem;border-radius:12px;max-width:80%;font-size:.83rem;">
+                <span style="display:block;font-size:.7rem;color:var(--muted);margin-bottom:.2rem;">${mine?escapeHtml(u.name):escapeHtml(partner.name)} · ${m.createdAt||""}</span>
+                ${escapeHtml(m.message||"")}
+              </div>`;
+            }).join("")}
+          </div>
+        </div>`;
+      }).join("")
+    : '<p class="muted">No messages yet.</p>';
+
+  const isAgent = u.role==="agent";
+  const tabs = isAgent
+    ? [["info","👤 Info"],["clients","👥 Clients ("+myClients.length+")"],["transactions","💰 Transactions ("+txns.length+")"],["appointments","📅 Appointments ("+reservations.length+")"],["contracts","📄 Contracts ("+contracts.length+")"],["chats","💬 Chats ("+chatPartnerIds.length+")"]]
+    : [["info","👤 Info"],["transactions","💰 Transactions ("+txns.length+")"],["chats","💬 Chats ("+chatPartnerIds.length+")"]];
+
+  document.getElementById("workflow-modal-title").textContent=isAgent?"Agent Profile":"Account Profile";
   document.getElementById("workflow-modal-subtitle").textContent=`${u.name} · ${u.role}`;
-  document.getElementById("workflow-modal-body").innerHTML=`<div class="profile-header-card" style="margin-bottom:1rem;"><div class="profile-header-avatar">${escapeHtml((u.name||"?").charAt(0))}</div><div><h2 style="color:#fff;margin:0;">${escapeHtml(u.name)}</h2><p>${escapeHtml(u.email||"No email")} ${u.phone?` · ${escapeHtml(u.phone)}`:""}</p><span class="badge badge-brand">${escapeHtml(u.role||"user")}</span> ${statusBadge(u.status||u.verificationStatus||"active")}</div></div>
-  <div class="panel"><div class="form-grid"><div><strong>Joined</strong><p>${safeDate(u.joined)}</p></div><div><strong>Agent type</strong><p>${escapeHtml(u.agentType||"—")}</p></div><div><strong>PRC</strong><p>${escapeHtml(u.prcNumber||"—")}</p></div><div><strong>NBI</strong><p>${escapeHtml(u.nbiNumber||"—")}</p></div><div><strong>City</strong><p>${escapeHtml(u.city||"—")}</p></div><div><strong>Bio</strong><p>${escapeHtml(u.bio||u.agentProfile_bio||"—")}</p></div></div></div>
-  <div class="panel"><h3>Related Appointments</h3><div class="table-wrap"><table><tr><th>Client</th><th>Property</th><th>Schedule</th><th>Status</th></tr>${reservations.map(r=>`<tr><td>${escapeHtml(r.clientName||"—")}</td><td>${escapeHtml(r.propertyTitle||"—")}</td><td>${safeDateTime(getResDate(r),getResTime(r))}</td><td>${statusBadge(r.status||"—")}</td></tr>`).join("")||'<tr><td colspan="4">No appointments.</td></tr>'}</table></div></div>
-  <div class="panel"><h3>Related Transactions</h3>${renderTransactionsTable(txns)}</div>`;
+  document.getElementById("workflow-modal-body").innerHTML=`
+    <div style="display:flex;align-items:center;gap:1rem;padding:1rem;background:rgba(255,255,255,.04);border-radius:14px;margin-bottom:1rem;">
+      <div style="width:56px;height:56px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;color:#000;flex-shrink:0;">${u.selfieBase64?`<img src="${u.selfieBase64}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:escapeHtml((u.name||"?").charAt(0))}</div>
+      <div style="flex:1;">
+        <h2 style="margin:0;font-size:1.2rem;">${escapeHtml(u.name)}</h2>
+        <p class="muted" style="margin:.2rem 0;">${escapeHtml(u.email||"No email")} ${u.phone?`· ${escapeHtml(u.phone)}`:""}</p>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.3rem;">
+          <span class="badge badge-brand">${escapeHtml(u.role)}</span>
+          ${statusBadge(u.status||"active")}
+          ${isAgent?statusBadge(u.verificationStatus||"pending"):""}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.4rem;">
+        ${u.role!=="developer"?`<button class="btn btn-outline btn-small" onclick="toggleSuspendUser(${u.id});closeModal('workflow-modal');">${u.status==="suspended"?"Unsuspend":"Suspend"}</button>`:""}
+      </div>
+    </div>
+
+    ${_profileTabBar(tabs)}
+
+    <div class="profile-tab-panel" data-tab="info">
+      <div class="form-grid">
+        <div class="panel"><strong>Full Name</strong><p>${escapeHtml(u.name)}</p></div>
+        <div class="panel"><strong>Email</strong><p>${escapeHtml(u.email||"—")}</p></div>
+        <div class="panel"><strong>Phone</strong><p>${escapeHtml(u.phone||"—")}</p></div>
+        <div class="panel"><strong>City</strong><p>${escapeHtml(u.city||"—")}</p></div>
+        <div class="panel"><strong>Joined</strong><p>${safeDate(u.joined)}</p></div>
+        ${isAgent?`
+        <div class="panel"><strong>Agent Type</strong><p>${escapeHtml(u.agentType||"—")}</p></div>
+        <div class="panel"><strong>PRC License</strong><p>${escapeHtml(u.prcNumber||"—")}</p></div>
+        <div class="panel"><strong>NBI Clearance</strong><p>${escapeHtml(u.nbiNumber||"—")}</p></div>
+        <div class="panel" style="grid-column:1/-1;"><strong>Bio</strong><p>${escapeHtml(u.bio||u.agentProfile_bio||"—")}</p></div>
+        `:""}
+      </div>
+      ${isAgent&&u.idPhotoBase64?`<div class="panel" style="margin-top:.75rem;"><strong>ID Photo</strong><img src="${u.idPhotoBase64}" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin-top:.5rem;"></div>`:""}
+    </div>
+
+    ${isAgent?`<div class="profile-tab-panel" data-tab="clients" style="display:none;">
+      <h3 style="margin-bottom:.75rem;">👥 Clients Served</h3>
+      ${myClients.length
+        ?`<div class="table-wrap"><table>
+            <tr><th>Client</th><th>Email</th><th>Phone</th><th>Properties</th><th>Status</th></tr>
+            ${myClients.map(c=>{
+              const cRes=agentRes.filter(r=>r.clientId===c.id);
+              const prog=getClientProgress(c.id);
+              return`<tr>
+                <td><strong>${escapeHtml(c.name)}</strong><br><span class="muted" style="font-size:.75rem;">${prog.icon} ${prog.stage}</span></td>
+                <td>${escapeHtml(c.email||"—")}</td>
+                <td>${escapeHtml(c.phone||"—")}</td>
+                <td style="font-size:.82rem;">${cRes.map(r=>escapeHtml(r.propertyTitle)).join("<br>")}</td>
+                <td>${statusBadge(c.status||"active")}</td>
+              </tr>`;
+            }).join("")}
+          </table></div>`
+        :'<p class="muted">No clients yet.</p>'}
+    </div>`:""}
+
+    <div class="profile-tab-panel" data-tab="transactions" style="display:none;">
+      <h3 style="margin-bottom:.75rem;">💰 All Transactions</h3>
+      ${renderTransactionsTable(txns)}
+    </div>
+
+    ${isAgent?`<div class="profile-tab-panel" data-tab="appointments" style="display:none;">
+      <h3 style="margin-bottom:.75rem;">📅 All Appointments</h3>
+      ${reservations.length
+        ?`<div class="table-wrap"><table>
+            <tr><th>Client</th><th>Property</th><th>Schedule</th><th>Status</th></tr>
+            ${reservations.map(r=>`<tr>
+              <td>${escapeHtml(r.clientName||"—")}</td>
+              <td>${escapeHtml(r.propertyTitle||"—")}</td>
+              <td>${safeDateTime(getResDate(r),getResTime(r))}</td>
+              <td>${statusBadge(r.status)}</td>
+            </tr>`).join("")}
+          </table></div>`
+        :'<p class="muted">No appointments yet.</p>'}
+    </div>
+    <div class="profile-tab-panel" data-tab="contracts" style="display:none;">
+      <h3 style="margin-bottom:.75rem;">📄 Contracts</h3>
+      ${renderContractsList(c=>c.agentId===uid)}
+    </div>`:""}
+
+    <div class="profile-tab-panel" data-tab="chats" style="display:none;">
+      <h3 style="margin-bottom:.75rem;">💬 All Conversations</h3>
+      ${chatThreadsHtml}
+    </div>`;
+
   document.getElementById("workflow-modal").classList.add("open");
+  _switchProfileTab("info");
 }
 
 // ── AUDIT LOG RENDERER ────────────────────────────────────────────────────────
@@ -3705,20 +4247,7 @@ function changePasswordGeneric(role){
     notify("Password changed successfully! ✅","success");}
 }
 
-// ── PROPERTY VIEW COUNT (auto-record on click) ────────────────────────────────
-function recordPropertyView(propertyId){
-  const props=SDB.get("properties",[]);
-  const p=props.find(x=>x.id===propertyId);
-  if(p){
-    p.views=(p.views||0)+1;
-    SDB.set("properties",props);
-    // Record visitor session
-    const visitors=SDB.get("propertyVisitors",[]);
-    visitors.push({propertyId,propId:propertyId,sessionId:getOrCreateSession(),viewedAt:nowLabel(),at:new Date().toISOString(),userId:currentUser?.id||null});
-    SDB.set("propertyVisitors",visitors);
-    refreshCache("properties","propertyVisitors");
-  }
-}
+// recordPropertyView is defined earlier — no duplicate needed
 
 function renderClientDashboard(){
   const reservationsAll=normalizeReservationDates().filter(r=>r.clientId===currentUser.id);
@@ -3854,7 +4383,7 @@ function renderAgentDashboard(){
   document.getElementById("agent-overview").innerHTML=`<div class="stat-grid"><div class="stat-card"><span class="dash-label">Verification</span><strong>${currentUser.verificationStatus||"pending"}</strong></div><div class="stat-card"><span class="dash-label">Listings</span><strong>${myProps.length}</strong></div><div class="stat-card"><span class="dash-label">Appointments</span><strong>${myRes.length}</strong></div><div class="stat-card"><span class="dash-label">Visitors</span><strong>${myVisitors.length}</strong></div></div>${!isApproved?`<div class="pending-wall"><h3>⏳ Awaiting Admin Approval</h3><p>Your agent application is under review. You will be notified once approved.</p></div>`:""}<div class="dashboard-card"><h3>Verification record</h3><p><strong>Agent type:</strong> ${currentUser.agentType||"Not set"}</p><p style="margin-top:.4rem;"><strong>NBI clearance:</strong> ${currentUser.nbiNumber||"Not submitted"}</p><p style="margin-top:.4rem;"><strong>PRC license:</strong> ${currentUser.prcNumber||"Not provided"} ${currentUser.licensed?'<span class="badge badge-success">Licensed</span>':""}</p></div>`;
   document.getElementById("agent-listings").innerHTML=`<div class="dashboard-card"><h3>My listings</h3><div class="table-wrap">${myProps.length?`<table><tr><th>Property</th><th>Type</th><th>Price</th><th>Views</th><th>Status</th><th>Actions</th></tr>${myProps.map(p=>`<tr><td><strong>${p.title}</strong><br><span class="muted">${p.location}</span></td><td>${p.type}</td><td>${peso(p.price)}</td><td>${p.views||0}</td><td>${statusBadge(p.status)}</td><td><button class="btn btn-outline btn-small" onclick="editProperty(${p.id})">Edit</button></td></tr>`).join("")}</table>`:'<p class="muted">No listings yet.</p>'}</div></div>`;
   // Appointments with workflow actions
-  document.getElementById("agent-appointments").innerHTML=`${renderAgentTimetable()}<div class="dashboard-card"><h3>Client Appointments</h3><p class="muted" style="margin-bottom:1rem;">Pending requests only hold a slot. Declining releases the slot. Confirming blocks it for other clients.</p>${rangeToolbar("agentAppointments","renderDashboards")}<div class="table-wrap">${myRes.length?`<table><tr><th>Client</th><th>Property</th><th>Schedule</th><th>Purpose</th><th>Status</th><th>Workflow</th></tr>${myRes.map(r=>{const contract=getContractByReservation(r.id);return`<tr><td><a href="#" onclick="openClientProfileModal(${r.clientId});return false;"><strong>${escapeHtml(r.clientName)}</strong></a></td><td>${escapeHtml(r.propertyTitle)}</td><td>${safeDateTime(getResDate(r),getResTime(r))}</td><td>${escapeHtml(r.purpose||"—")}<br><span class="muted">${escapeHtml(r.inspectionRequest||"")}</span></td><td>${statusBadge(r.status)}</td><td><div class="stack-actions">${r.status==="Pending agent approval"?`<button class="appt-confirm" onclick="updateReservationWorkflow(${r.id},'Confirmed')">Accept</button><button class="appt-cancel" onclick="updateReservationWorkflow(${r.id},'Declined')">Decline</button>`:""}${r.status==="Confirmed"?`<button class="btn btn-brand btn-small" onclick="openContractForm(${r.id})">${contract?"View / Edit Contract":"Generate Contract"}</button><label class="btn btn-outline btn-small">Visit proof<input id="visit-proof-${r.id}" type="file" accept="image/*,video/*" style="display:none" onchange="markVisit(${r.id})"></label><label class="btn btn-outline btn-small">Payment receipt<input id="pay-proof-${r.id}" type="file" accept="image/*,video/*,.pdf" style="display:none" onchange="markPaid(${r.id})"></label>`:""}${contract?`<button class="btn btn-outline btn-small" onclick="openContractView(${contract.id})">Contract</button>`:""}<button class="btn btn-outline btn-small" onclick="archiveReservation(${r.id})">Archive</button></div></td></tr>`}).join("")}</table>`:'<p class="muted">No appointments for this view.</p>'}</div></div>`;
+  document.getElementById("agent-appointments").innerHTML=`${renderAgentTimetable()}<div class="dashboard-card"><h3>Client Appointments</h3><p class="muted" style="margin-bottom:1rem;">Pending requests only hold a slot. Declining releases the slot. Confirming blocks it for other clients.</p>${rangeToolbar("agentAppointments","renderDashboards")}<div class="table-wrap">${myRes.length?`<table><tr><th>Client</th><th>Property</th><th>Schedule</th><th>Purpose</th><th>Status</th><th>Workflow</th></tr>${myRes.map(r=>{const contract=getContractByReservation(r.id);return`<tr><td><a href="#" onclick="openClientProfileModal(${r.clientId});return false;"><strong>${escapeHtml(r.clientName)}</strong></a></td><td>${escapeHtml(r.propertyTitle)}</td><td>${safeDateTime(getResDate(r),getResTime(r))}</td><td>${escapeHtml(r.purpose||"—")}<br><span class="muted">${escapeHtml(r.inspectionRequest||"")}</span></td><td>${statusBadge(r.status)}</td><td><div class="stack-actions">${r.status==="Pending agent approval"?`<button class="appt-confirm" onclick="updateReservationWorkflow(${r.id},'Confirmed')">Accept</button><button class="appt-cancel" onclick="updateReservationWorkflow(${r.id},'Declined')">Decline</button>`:""}${r.status==="Confirmed"?`<button class="btn btn-brand btn-small" onclick="openContractForm(${r.id})">${contract?"View / Edit Contract":"Generate Contract"}</button><label class="btn btn-outline btn-small">Visit proof<input id="visit-proof-${r.id}" type="file" accept="image/*,video/*" style="display:none" onchange="markVisit(${r.id})"></label><label class="btn btn-outline btn-small">Payment receipt<input id="pay-proof-${r.id}" type="file" accept="image/*,video/*,.pdf" style="display:none" onchange="markPaid(${r.id})"></label>`:""}${contract?`<button class="btn btn-outline btn-small" onclick="openContractView(${contract.id})">Contract</button>`:""}<button class="btn btn-outline btn-small" onclick="${r.archived?`restoreReservation(${r.id})`:`archiveReservation(${r.id})`}" style="${r.archived?"color:#16a34a;border-color:#16a34a;":""}">${r.archived?"↩ Restore":"Archive"}</button></div></td></tr>`}).join("")}</table>`:'<p class="muted">No appointments for this view.</p>'}</div></div>`;
 
   // Clients tab
   const myClients=[...new Map(myRes.map(r=>[r.clientId,r])).values()];
@@ -4044,12 +4573,29 @@ function renderAdminDashboard(){
   const users=SDB.get("users",[]),reports=SDB.get("reports",[]),reservations=normalizeReservationDates(),properties=SDB.get("properties",[]),messages=SDB.get("messages",[]),transactions=SDB.get("transactions",[]),cfg=SDB.get("siteConfig",{});
   const adminReservations=filterItems(reservations,"adminAppointments","week");
   const adminTransactions=filterItems(transactions,"adminTransactions","week");
-  const clients=users.filter(u=>u.role==="client");
+  // Include all clients: registered with role==="client" + anyone who appears
+  // in reservations or messages as clientId but may have been created before role was set
+  const _clientIds=new Set();
+  users.filter(u=>u.role==="client").forEach(u=>_clientIds.add(u.id));
+  SDB.get("reservations",[]).forEach(r=>{if(r.clientId)_clientIds.add(r.clientId);});
+  SDB.get("messages",[]).forEach(m=>{
+    const sender=users.find(u=>u.id===m.fromId);
+    const recip=users.find(u=>u.id===m.toId);
+    if(sender&&sender.role==="client")_clientIds.add(sender.id);
+    if(recip&&recip.role==="client")_clientIds.add(recip.id);
+    // Also add any user referenced who isn't an agent/admin
+    if(sender&&!["agent","admin","developer"].includes(sender.role))_clientIds.add(sender.id);
+  });
+  const clients=users.filter(u=>_clientIds.has(u.id)&&!["agent","admin","developer"].includes(u.role));
   const staff=users.filter(u=>u.role==="admin"||u.role==="developer");
   const agents=users.filter(u=>u.role==="agent");
   const pendingMsgs=messages.filter(m=>!m.readByAdmin).length;
 
   // Overview
+  const _allContracts = SDB.get("contracts",[]);
+  const _pendingVerify = _allContracts.filter(c=>contractStatusFlow(c)==="agent_signed");
+  const _pendingAgentSign = _allContracts.filter(c=>contractStatusFlow(c)==="client_signed");
+
   document.getElementById("admin-overview").innerHTML=`
     <div class="page-title-bar"><h2>📊 Admin Overview</h2><span class="breadcrumb">Control Panel</span></div>
     <div class="summary-grid">
@@ -4059,9 +4605,42 @@ function renderAdminDashboard(){
       <div class="summary-card"><div class="summary-card-icon">📅</div><div class="summary-card-info"><strong>${reservations.length}</strong><span>Reservations</span></div></div>
       <div class="summary-card"><div class="summary-card-icon">💬</div><div class="summary-card-info"><strong>${pendingMsgs}</strong><span>Unread Chats</span></div></div>
       <div class="summary-card"><div class="summary-card-icon">🚨</div><div class="summary-card-info"><strong>${reports.filter(r=>r.status!=="Resolved").length}</strong><span>Open Reports</span></div></div>
+      <div class="summary-card" style="cursor:pointer;" onclick="switchDashboardTab('admin','transactions',null)"><div class="summary-card-icon">📄</div><div class="summary-card-info"><strong>${_pendingVerify.length}</strong><span>Contracts to Verify</span></div></div>
+      <div class="summary-card"><div class="summary-card-icon">✍️</div><div class="summary-card-info"><strong>${_pendingAgentSign.length}</strong><span>Awaiting Agent Sign</span></div></div>
     </div>
+
+    ${_pendingVerify.length ? `
+    <div class="panel" style="margin-bottom:1rem;border:1px solid rgba(22,163,74,.35);background:rgba(22,163,74,.06);">
+      <div class="panel-head"><h3 style="color:#86efac;">🔍 Contracts Awaiting Your Verification (${_pendingVerify.length})</h3></div>
+      <div class="table-wrap"><table>
+        <tr><th>Property</th><th>Client</th><th>Agent</th><th>Agent Signed</th><th>Action</th></tr>
+        ${_pendingVerify.map(c=>`<tr>
+          <td><strong>${escapeHtml(c.propertyTitle)}</strong></td>
+          <td>${escapeHtml(c.buyerName)}</td>
+          <td>${escapeHtml(c.sellerName)}</td>
+          <td>${escapeHtml(c.agentSignedAt||"—")}</td>
+          <td><button class="btn btn-success btn-small" onclick="openContractView(${c.id})">🔍 Review & Verify</button></td>
+        </tr>`).join("")}
+      </table></div>
+    </div>` : ""}
+
+    ${_pendingAgentSign.length ? `
+    <div class="panel" style="margin-bottom:1rem;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.06);">
+      <div class="panel-head"><h3 style="color:#fcd34d;">✍️ Contracts Awaiting Agent Signature (${_pendingAgentSign.length})</h3></div>
+      <div class="table-wrap"><table>
+        <tr><th>Property</th><th>Client</th><th>Agent</th><th>Client Signed</th></tr>
+        ${_pendingAgentSign.map(c=>`<tr>
+          <td>${escapeHtml(c.propertyTitle)}</td>
+          <td>${escapeHtml(c.buyerName)}</td>
+          <td>${escapeHtml(c.sellerName)}</td>
+          <td>${escapeHtml(c.signedAt||"—")}</td>
+        </tr>`).join("")}
+      </table></div>
+    </div>` : ""}
+
     <div class="panel"><div class="panel-head"><h3>Recent Activity</h3><button class="btn btn-outline btn-small" onclick="switchDashboardTab('admin','auditlog',null)">View Full Log</button></div>${renderAuditLog()}</div>
-    ${renderFeatureCoveragePanel()}`;
+    ${renderFeatureCoveragePanel()}
+    ${renderFirebaseSetupPanel()}`;
 
   // Approvals
   document.getElementById("admin-approvals").innerHTML=(()=>{
@@ -4077,23 +4656,93 @@ function renderAdminDashboard(){
   })();
 
   // Users
+  // ── All Users (agents searchable card grid) ────────────────────────────
+  const _agentSearch = (window._adminAgentSearch||"").toLowerCase();
+  const _filteredAgents2 = agents.filter(u=>
+    !_agentSearch ||
+    u.name?.toLowerCase().includes(_agentSearch) ||
+    u.email?.toLowerCase().includes(_agentSearch) ||
+    u.phone?.toLowerCase().includes(_agentSearch)
+  );
   document.getElementById("admin-users").innerHTML=`
+    <div class="page-title-bar"><h2>🏢 Agents</h2><span class="breadcrumb">${agents.length} total agents</span></div>
     <div class="dashboard-card">
-      <h3>All Users</h3>
-      <div class="table-wrap"><table><tr><th>Name</th><th>Role</th><th>Contact</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
-      ${users.map(u=>`<tr><td><strong>${escapeHtml(u.name)}</strong></td><td>${u.role}${u.agentType?" / "+u.agentType:""}</td><td>${escapeHtml(u.email||"")} ${u.phone?`<br>${u.phone}`:""}</td><td>${safeDate(u.joined)}</td><td>${statusBadge(u.status==="active"?(u.verificationStatus||"active"):u.status)}</td><td><div class="stack-actions">${u.role!=="developer"?`<button class="btn btn-outline btn-small" onclick="viewStaff(${u.id})">👁 View</button><button class="btn btn-outline btn-small" onclick="toggleSuspendUser(${u.id})">${u.status==="suspended"?"Unsuspend":"Suspend"}</button>`:""}</div></td></tr>`).join("")}
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap;">
+        <input type="text" placeholder="🔍 Search agents…" value="${escapeHtml(window._adminAgentSearch||"")}"
+          oninput="window._adminAgentSearch=this.value;renderDashboards();"
+          style="flex:1;min-width:200px;padding:.55rem .85rem;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.07);color:#fff;font-size:.88rem;">
+        <span class="muted" style="font-size:.82rem;">Showing ${_filteredAgents2.length} of ${agents.length}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.85rem;">
+        ${_filteredAgents2.map(u=>{
+          const agentRes2=normalizeReservationDates().filter(r=>r.agentId===u.id);
+          const clientCount=[...new Set(agentRes2.map(r=>r.clientId))].length;
+          const txCount=SDB.get("transactions",[]).filter(t=>t.agentId===u.id).length;
+          return`<div onclick="openUserProfileModal(${u.id})" style="background:rgba(255,255,255,.05);border-radius:14px;padding:1rem;cursor:pointer;border:1px solid var(--line);transition:.15s;" onmouseover="this.style.background='rgba(201,162,39,.1)';this.style.borderColor='rgba(201,162,39,.4)'" onmouseout="this.style.background='rgba(255,255,255,.05)';this.style.borderColor='var(--line)'">
+            <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;">
+              <div style="width:42px;height:42px;border-radius:50%;overflow:hidden;background:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;font-size:1.1rem;flex-shrink:0;">${u.selfieBase64?`<img src="${u.selfieBase64}" style="width:100%;height:100%;object-fit:cover;">`:escapeHtml((u.name||"?").charAt(0))}</div>
+              <div>
+                <strong style="display:block;">${escapeHtml(u.name)}</strong>
+                <span class="muted" style="font-size:.78rem;">${escapeHtml(u.agentType||u.email||"Agent")}</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.6rem;">
+              ${statusBadge(u.verificationStatus||"pending")}
+              ${statusBadge(u.status||"active")}
+            </div>
+            <div style="display:flex;gap:1rem;font-size:.78rem;color:var(--muted);">
+              <span>👥 ${clientCount} client${clientCount!==1?"s":""}</span>
+              <span>💰 ${txCount} tx</span>
+              <span>📍 ${escapeHtml(u.city||"—")}</span>
+            </div>
+          </div>`;
+        }).join("")}
+        ${_filteredAgents2.length===0?'<p class="muted" style="padding:2rem;grid-column:1/-1;text-align:center;">No agents found.</p>':""}
+      </div>
+    </div>
+
+    <div class="dashboard-card" style="margin-top:1rem;">
+      <h3>💰 All Agent Transactions</h3>
+      <p class="muted" style="margin-bottom:.75rem;font-size:.84rem;">Click any agent card above for their full breakdown. Below is combined transaction history across all agents.</p>
+      ${renderTransactionsTable(SDB.get("transactions",[]).filter(t=>agents.some(a=>a.id===t.agentId)),true)}
+    </div>
+
+    <div class="dashboard-card" style="margin-top:1rem;">
+      <h3>📅 All Agent Appointments</h3>
+      <div class="table-wrap"><table>
+        <tr><th>Agent</th><th>Client</th><th>Property</th><th>Schedule</th><th>Status</th></tr>
+        ${normalizeReservationDates().filter(r=>agents.some(a=>a.id===r.agentId)).map(r=>`<tr>
+          <td><a href="#" onclick="openUserProfileModal(${r.agentId});return false;"><strong>${escapeHtml(r.agentName||"—")}</strong></a></td>
+          <td><a href="#" onclick="openClientProfileModal(${r.clientId});return false;">${escapeHtml(r.clientName)}</a></td>
+          <td>${escapeHtml(r.propertyTitle)}</td>
+          <td>${safeDateTime(getResDate(r),getResTime(r))}</td>
+          <td>${statusBadge(r.status)}</td>
+        </tr>`).join("") || '<tr><td colspan="5" class="muted" style="text-align:center;padding:1rem;">No appointments yet.</td></tr>'}
       </table></div>
+    </div>
+
+    <div class="dashboard-card" style="margin-top:1rem;">
+      <h3>💬 All Agent Conversations</h3>
+      <p class="muted" style="margin-bottom:.75rem;font-size:.84rem;">Click an agent card to open their full chat history.</p>
+      ${renderChatStatusPanel(SDB.get("messages",[]).filter(m=>agents.some(a=>a.id===m.fromId||a.id===m.toId)),"admin")}
     </div>`;
 
   // Staff
   document.getElementById("admin-staff").innerHTML=`
+    <div class="page-title-bar"><h2>👔 Staff</h2><span class="breadcrumb">Admin accounts</span></div>
     <div class="dashboard-card">
-      <h3>Staff Accounts</h3>
-      <div class="table-wrap"><table><tr><th>Name</th><th>Role</th><th>Email</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
-      ${staff.map(u=>`<tr><td><strong>${escapeHtml(u.name)}</strong></td><td><span class="badge badge-brand">${u.role}</span></td><td>${escapeHtml(u.email||"—")}</td><td>${safeDate(u.joined)}</td><td>${statusBadge(u.status||"active")}</td><td><button class="btn btn-outline btn-small" onclick="viewStaff(${u.id})">👁 View</button></td></tr>`).join("")}
-      </table></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.85rem;margin-bottom:1rem;">
+        ${staff.map(u=>`<div onclick="openUserProfileModal(${u.id})" style="background:rgba(255,255,255,.05);border-radius:14px;padding:1rem;cursor:pointer;border:1px solid var(--line);transition:.15s;" onmouseover="this.style.background='rgba(201,162,39,.1)'" onmouseout="this.style.background='rgba(255,255,255,.05)'">
+          <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;">
+            <div style="width:38px;height:38px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;">${escapeHtml((u.name||"?").charAt(0))}</div>
+            <div><strong>${escapeHtml(u.name)}</strong><br><span class="muted" style="font-size:.75rem;">${escapeHtml(u.email||"—")}</span></div>
+          </div>
+          <div style="display:flex;gap:.4rem;">${statusBadge(u.role)} ${statusBadge(u.status||"active")}</div>
+        </div>`).join("")}
+        ${staff.length===0?'<p class="muted">No staff accounts yet.</p>':""}
+      </div>
     </div>
-    <div class="dashboard-card" style="margin-top:1rem;">
+    <div class="dashboard-card">
       <h3>➕ Add Staff Account</h3>
       <div class="form-grid">
         <div class="field"><label>Full Name</label><input id="staff-name-input" type="text" placeholder="Staff name"></div>
@@ -4107,12 +4756,74 @@ function renderAdminDashboard(){
     </div>`;
 
   // Clients
+  const _clientSearch = (window._adminClientSearch||"").toLowerCase();
+  const _filteredClients2 = clients.filter(u=>
+    !_clientSearch ||
+    u.name?.toLowerCase().includes(_clientSearch) ||
+    u.email?.toLowerCase().includes(_clientSearch) ||
+    u.phone?.toLowerCase().includes(_clientSearch)
+  );
   document.getElementById("admin-clients").innerHTML=`
+    <div class="page-title-bar"><h2>👥 Clients</h2><span class="breadcrumb">${clients.length} total clients</span></div>
     <div class="dashboard-card">
-      <h3>👤 Client Management</h3>
-      <div class="table-wrap"><table><tr><th>Name</th><th>Email</th><th>Phone</th><th>Progress</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
-      ${clients.map(u=>{const prog=getClientProgress(u.id);return`<tr><td><strong>${escapeHtml(u.name)}</strong></td><td>${escapeHtml(u.email||"—")}</td><td>${escapeHtml(u.phone||"—")}</td><td>${prog.icon} ${prog.stage}</td><td>${safeDate(u.joined)}</td><td>${statusBadge(u.status||"active")}</td><td><button class="btn btn-outline btn-small" onclick="viewStaff(${u.id})">👁 View</button><button class="btn btn-outline btn-small" onclick="toggleSuspendUser(${u.id})">${u.status==="suspended"?"Unsuspend":"Suspend"}</button></td></tr>`}).join("")}
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap;">
+        <input type="text" placeholder="🔍 Search by name, email, phone…" value="${escapeHtml(window._adminClientSearch||"")}"
+          oninput="window._adminClientSearch=this.value;renderDashboards();"
+          style="flex:1;min-width:200px;padding:.55rem .85rem;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.07);color:#fff;font-size:.88rem;">
+        <span class="muted" style="font-size:.82rem;">Showing ${_filteredClients2.length} of ${clients.length}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.85rem;">
+        ${_filteredClients2.map(u=>{
+          const prog=getClientProgress(u.id);
+          const txCount=SDB.get("transactions",[]).filter(t=>t.clientId===u.id).length;
+          const resCount=normalizeReservationDates().filter(r=>r.clientId===u.id).length;
+          return`<div onclick="openClientProfileModal(${u.id})" style="background:rgba(255,255,255,.05);border-radius:14px;padding:1rem;cursor:pointer;border:1px solid var(--line);transition:.15s;" onmouseover="this.style.background='rgba(201,162,39,.1)';this.style.borderColor='rgba(201,162,39,.4)'" onmouseout="this.style.background='rgba(255,255,255,.05)';this.style.borderColor='var(--line)'">
+            <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;">
+              <div style="width:42px;height:42px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;font-size:1.1rem;flex-shrink:0;">${escapeHtml((u.name||"?").charAt(0))}</div>
+              <div>
+                <strong style="display:block;">${escapeHtml(u.name)}</strong>
+                <span class="muted" style="font-size:.78rem;">${escapeHtml(u.email||u.phone||"No contact")}</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.6rem;">
+              ${statusBadge(u.status||"active")}
+              <span style="font-size:.74rem;background:rgba(255,255,255,.08);padding:.2rem .55rem;border-radius:999px;">${prog.icon} ${prog.stage}</span>
+            </div>
+            <div style="display:flex;gap:1rem;font-size:.78rem;color:var(--muted);">
+              <span>📅 ${resCount} appt${resCount!==1?"s":""}</span>
+              <span>💰 ${txCount} tx</span>
+              <span>📍 ${escapeHtml(u.city||"—")}</span>
+            </div>
+          </div>`;
+        }).join("")}
+        ${_filteredClients2.length===0?'<p class="muted" style="padding:2rem;grid-column:1/-1;text-align:center;">No clients found.</p>':""}
+      </div>
+    </div>
+
+    <div class="dashboard-card" style="margin-top:1rem;">
+      <h3>💰 All Client Transactions</h3>
+      <p class="muted" style="margin-bottom:.75rem;font-size:.84rem;">Click any client card above to see their full details. Below is the combined transaction history for all clients.</p>
+      ${renderTransactionsTable(SDB.get("transactions",[]).filter(t=>clients.some(c=>c.id===t.clientId)),true)}
+    </div>
+
+    <div class="dashboard-card" style="margin-top:1rem;">
+      <h3>📅 All Client Appointments</h3>
+      <div class="table-wrap"><table>
+        <tr><th>Client</th><th>Property</th><th>Agent</th><th>Schedule</th><th>Status</th></tr>
+        ${normalizeReservationDates().filter(r=>clients.some(c=>c.id===r.clientId)).map(r=>`<tr>
+          <td><a href="#" onclick="openClientProfileModal(${r.clientId});return false;"><strong>${escapeHtml(r.clientName)}</strong></a></td>
+          <td>${escapeHtml(r.propertyTitle)}</td>
+          <td>${escapeHtml(r.agentName||"—")}</td>
+          <td>${safeDateTime(getResDate(r),getResTime(r))}</td>
+          <td>${statusBadge(r.status)}</td>
+        </tr>`).join("") || '<tr><td colspan="5" class="muted" style="text-align:center;padding:1rem;">No appointments yet.</td></tr>'}
       </table></div>
+    </div>
+
+    <div class="dashboard-card" style="margin-top:1rem;">
+      <h3>💬 All Client Conversations</h3>
+      <p class="muted" style="margin-bottom:.75rem;font-size:.84rem;">Click a client card to open their full chat history.</p>
+      ${renderChatStatusPanel(SDB.get("messages",[]).filter(m=>clients.some(c=>c.id===m.fromId||c.id===m.toId)),"admin")}
     </div>`;
 
   // All Chats with pending indicator
@@ -4125,22 +4836,74 @@ function renderAdminDashboard(){
     </div>`;
 
   // Transactions
+  // ── Transactions (grouped by user) ──────────────────────────────────────
+  const _txUserFilter = window._adminTxUserFilter || "all";
+  const _txFilteredClients = [
+    {id:"all", name:"All Users"},
+    ...clients.map(c=>({id:c.id, name:c.name})),
+    ...agents.map(a=>({id:a.id, name:a.name+" (agent)"}))
+  ];
+  const _txFiltered = _txUserFilter==="all" ? adminTransactions : adminTransactions.filter(t=>t.clientId===_txUserFilter||t.agentId===_txUserFilter);
   document.getElementById("admin-transactions").innerHTML=`
+    <div class="page-title-bar"><h2>💰 Transactions</h2><span class="breadcrumb">All financial records</span></div>
     <div class="dashboard-card">
-      <h3>💰 All Auto Transactions</h3>
-      <p class="muted" style="margin-bottom:1rem;">Records are generated automatically from reservations, visits, contracts, signatures, and payments.</p>
-      ${rangeToolbar("adminTransactions","renderDashboards")}
-      ${renderTransactionsTable(adminTransactions,true)}
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;margin-bottom:1rem;">
+        <label style="font-size:.85rem;font-weight:600;">Filter by user:</label>
+        <select onchange="window._adminTxUserFilter=this.value;renderDashboards();" style="padding:.45rem .85rem;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:.85rem;">
+          ${_txFilteredClients.map(u=>`<option value="${u.id}" ${_txUserFilter==u.id?"selected":""}>${escapeHtml(u.name)}</option>`).join("")}
+        </select>
+        ${rangeToolbar("adminTransactions","renderDashboards")}
+      </div>
+      <p class="muted" style="margin-bottom:.75rem;">Records are auto-generated from reservations, visits, contracts, and payments. Showing <strong>${_txFiltered.length}</strong> record(s).</p>
+      ${renderTransactionsTable(_txFiltered,true)}
     </div>
-    <div class="dashboard-card"><h3>All Contracts</h3>${renderContractsList(()=>true)}</div>`;
+    <div class="dashboard-card" style="margin-top:1rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem;">
+        <h3>📄 All Contracts</h3>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+          ${SDB.get("contracts",[]).filter(c=>contractStatusFlow(c)==="agent_signed").length>0
+            ?`<span style="background:rgba(22,163,74,.15);color:#86efac;border:1px solid rgba(22,163,74,.3);padding:.3rem .75rem;border-radius:999px;font-size:.78rem;font-weight:600;">🔍 ${SDB.get("contracts",[]).filter(c=>contractStatusFlow(c)==="agent_signed").length} need verification</span>`
+            :""}
+        </div>
+      </div>
+      ${renderContractsList(()=>true)}
+    </div>`;
 
-  // Appointments
+  // ── Appointments (grouped by user) ──────────────────────────────────────
+  const _apptUserFilter = window._adminApptUserFilter || "all";
+  const _apptUserList = [
+    {id:"all", name:"All Users"},
+    ...clients.map(c=>({id:c.id, name:c.name+" (client)"})),
+    ...agents.map(a=>({id:a.id, name:a.name+" (agent)"}))
+  ];
+  const _apptFiltered = _apptUserFilter==="all" ? adminReservations : adminReservations.filter(r=>r.clientId===_apptUserFilter||r.agentId===_apptUserFilter);
   document.getElementById("admin-appointments").innerHTML=`
+    <div class="page-title-bar"><h2>📅 Appointments</h2><span class="breadcrumb">All reservations & schedules</span></div>
     <div class="dashboard-card">
-      <h3>📅 All Appointments</h3>
-      ${rangeToolbar("adminAppointments","renderDashboards")}
-      <div class="table-wrap"><table><tr><th>Client</th><th>Property</th><th>Schedule</th><th>Agent</th><th>Status</th><th>Actions</th></tr>
-      ${adminReservations.map(r=>`<tr><td>${escapeHtml(r.clientName)}</td><td>${escapeHtml(r.propertyTitle)}</td><td>${safeDateTime(getResDate(r),getResTime(r))}</td><td>${escapeHtml(r.agentName||"—")}</td><td>${statusBadge(r.status)}</td><td>${r.status==="Pending agent approval"?`<button class="appt-confirm" onclick="updateReservationWorkflow(${r.id},'Confirmed')">Accept</button> <button class="appt-cancel" onclick="updateReservationWorkflow(${r.id},'Declined')">Decline</button>`:statusBadge(r.status)} <button class="btn btn-outline btn-small" onclick="archiveReservation(${r.id})">Archive</button></td></tr>`).join("")}
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;margin-bottom:1rem;">
+        <label style="font-size:.85rem;font-weight:600;">Filter by user:</label>
+        <select onchange="window._adminApptUserFilter=this.value;renderDashboards();" style="padding:.45rem .85rem;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:.85rem;">
+          ${_apptUserList.map(u=>`<option value="${u.id}" ${_apptUserFilter==u.id?"selected":""}>${escapeHtml(u.name)}</option>`).join("")}
+        </select>
+        ${rangeToolbar("adminAppointments","renderDashboards")}
+      </div>
+      <p class="muted" style="margin-bottom:.75rem;">Showing <strong>${_apptFiltered.length}</strong> appointment(s).</p>
+      <div class="table-wrap"><table>
+        <tr><th>Client</th><th>Property</th><th>Schedule</th><th>Agent</th><th>Status</th><th>Actions</th></tr>
+        ${_apptFiltered.length ? _apptFiltered.map(r=>`<tr>
+          <td><strong>${escapeHtml(r.clientName)}</strong></td>
+          <td>${escapeHtml(r.propertyTitle)}</td>
+          <td>${safeDateTime(getResDate(r),getResTime(r))}</td>
+          <td>${escapeHtml(r.agentName||"—")}</td>
+          <td>${statusBadge(r.status)}</td>
+          <td class="stack-actions">
+            ${!r.archived && r.status==="Pending agent approval"
+              ? `<button class="appt-confirm" onclick="updateReservationWorkflow(${r.id},'Confirmed')">✅ Accept</button>
+                 <button class="appt-cancel" onclick="updateReservationWorkflow(${r.id},'Declined')">❌ Decline</button>`
+              : r.archived ? "" : statusBadge(r.status)}
+            <button class="btn btn-outline btn-small" onclick="${r.archived?`restoreReservation(${r.id})`:`archiveReservation(${r.id})`}" style="${r.archived?"color:#16a34a;border-color:#16a34a;":""}">${r.archived?"↩ Restore":"Archive"}</button>
+          </td>
+        </tr>`).join("") : `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">No appointments found.</td></tr>`}
       </table></div>
     </div>`;
 
@@ -4151,22 +4914,71 @@ function renderAdminDashboard(){
       ${reports.length?`<div class="table-wrap"><table><tr><th>Reported</th><th>Reason</th><th>Reporter</th><th>Date</th><th>Status</th><th>Actions</th></tr>${reports.map(r=>`<tr><td>${escapeHtml(r.reportedName)}<br><span class="muted">${escapeHtml(r.details||"")}</span></td><td>${escapeHtml(r.reason)}</td><td>${escapeHtml(r.reporterName)}</td><td>${safeDate(r.createdAt)}</td><td>${statusBadge(r.status)}</td><td><button class="btn btn-success btn-small" onclick="updateReport(${r.id},'Resolved')">Resolve</button> <button class="btn btn-danger btn-small" onclick="suspendReportedUser(${r.id})">Suspend</button></td></tr>`).join("")}</table></div>`:'<p class="muted">No reports filed.</p>'}
     </div>`;
 
-  // Audit Log
+  // ── Audit Log ────────────────────────────────────────────────────────────
+  const _auditUserFilter = window._adminAuditUserFilter || "all";
+  const _allAuditUsers = [{id:"all",name:"All Users"}, ...users.map(u=>({id:u.id,name:`${u.name} (${u.role})`}))];
+  const _auditLog = SDB.get("activityLog",[]);
+  const _filteredAudit = _auditUserFilter==="all" ? _auditLog : _auditLog.filter(e=>e.userId===_auditUserFilter||e.actorId===_auditUserFilter);
   document.getElementById("admin-auditlog").innerHTML=`
-    <div class="page-title-bar"><h2>📋 Audit Log / Trail</h2><span class="breadcrumb">System Activity</span></div>
-    <div class="panel"><div class="panel-head"><h3>Full Activity Log</h3><button class="btn btn-brand btn-small" onclick="downloadBackup()">⬇️ Export Backup</button></div>${renderAuditLog()}</div>`;
+    <div class="page-title-bar"><h2>📋 Audit Log</h2><span class="breadcrumb">System Activity Trail</span></div>
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Activity Log</h3>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+          <select onchange="window._adminAuditUserFilter=this.value;renderDashboards();" style="padding:.4rem .75rem;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:.82rem;">
+            ${_allAuditUsers.map(u=>`<option value="${u.id}" ${_auditUserFilter==u.id?"selected":""}>${escapeHtml(u.name)}</option>`).join("")}
+          </select>
+          <button class="btn btn-brand btn-small" onclick="downloadBackup()">⬇️ Export Backup</button>
+        </div>
+      </div>
+      ${_filteredAudit.length
+        ? `<div class="table-wrap"><table>
+            <tr><th>Time</th><th>User</th><th>Action</th><th>Details</th></tr>
+            ${[..._filteredAudit].reverse().slice(0,100).map(e=>`<tr>
+              <td style="white-space:nowrap;font-size:.78rem;">${escapeHtml(e.createdAt||e.time||"")}</td>
+              <td><strong>${escapeHtml(e.actorName||e.userName||"System")}</strong><br><span class="muted" style="font-size:.74rem;">${escapeHtml(e.role||"")}</span></td>
+              <td>${escapeHtml(e.action||e.type||"")}</td>
+              <td style="font-size:.82rem;">${escapeHtml(e.details||e.description||"")}</td>
+            </tr>`).join("")}
+          </table></div>`
+        : `<p class="muted" style="padding:1.5rem;text-align:center;">No activity log entries found${_auditUserFilter!=="all"?" for this user":""}.</p>`}
+    </div>`;
 
-  // Backup
+  // ── Backup ─────────────────────────────────────────────────────────────
   document.getElementById("admin-backup").innerHTML=`
-    <div class="page-title-bar"><h2>💾 Backup</h2><span class="breadcrumb">Data Management</span></div>
-    <div class="panel"><div class="panel-head"><h3>Export Full Backup</h3></div>
-    <p style="color:var(--muted);margin-bottom:1rem;">Download a complete JSON backup of users, properties, appointments, messages, transactions, contracts, reports, settings, and activity logs.</p>
-    <button class="btn btn-brand" onclick="downloadBackup()">⬇️ Download Backup</button>
+    <div class="page-title-bar"><h2>💾 Backup & Restore</h2><span class="breadcrumb">Data Management</span></div>
+
+    <div class="panel" style="margin-bottom:1rem;">
+      <div class="panel-head"><h3>📦 What's in your database</h3></div>
+      <div class="summary-grid" style="margin-bottom:.5rem;">
+        <div class="summary-card"><div class="summary-card-icon">👥</div><div class="summary-card-info"><strong>${users.length}</strong><span>Users</span></div></div>
+        <div class="summary-card"><div class="summary-card-icon">🏠</div><div class="summary-card-info"><strong>${properties.length}</strong><span>Properties</span></div></div>
+        <div class="summary-card"><div class="summary-card-icon">📅</div><div class="summary-card-info"><strong>${reservations.length}</strong><span>Reservations</span></div></div>
+        <div class="summary-card"><div class="summary-card-icon">💬</div><div class="summary-card-info"><strong>${messages.length}</strong><span>Messages</span></div></div>
+        <div class="summary-card"><div class="summary-card-icon">💰</div><div class="summary-card-info"><strong>${transactions.length}</strong><span>Transactions</span></div></div>
+        <div class="summary-card"><div class="summary-card-icon">📋</div><div class="summary-card-info"><strong>${SDB.get("contracts",[]).length}</strong><span>Contracts</span></div></div>
+      </div>
     </div>
-    <div class="panel" style="margin-top:1rem;"><div class="panel-head"><h3>Restore from Backup</h3></div>
-    <p style="color:var(--muted);margin-bottom:1rem;">Choose a previously downloaded JSON backup. After selecting the file, the app will ask for confirmation, restore the data, refresh the dashboard, and show a restored-count summary.</p>
-    <input type="file" accept=".json" onchange="restoreBackup(this.files[0])" style="margin-bottom:.8rem;display:block;">
-    <div class="info-box">Restore replaces the current local/cloud records with the contents of the selected backup file.</div>
+
+    <div class="panel" style="margin-bottom:1rem;">
+      <div class="panel-head"><h3>⬇️ Export Backup</h3></div>
+      <p style="color:var(--muted);margin-bottom:1rem;font-size:.88rem;">Download a complete JSON file of all your data: users, properties, appointments, messages, transactions, contracts, reports, settings, and activity logs. Save it somewhere safe.</p>
+      <button class="btn btn-brand" onclick="downloadBackup()">⬇️ Download Backup JSON</button>
+      <p style="margin-top:.75rem;font-size:.78rem;color:var(--muted);">File will be named <code>golden-estate-backup-[date].json</code></p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>⬆️ Restore from Backup</h3></div>
+      <p style="color:var(--muted);margin-bottom:1rem;font-size:.88rem;">Select a previously downloaded backup JSON file. The app will confirm before overwriting any current data.</p>
+      <div style="border:2px dashed var(--line);border-radius:14px;padding:2rem;text-align:center;background:var(--panel);">
+        <div style="font-size:2.5rem;margin-bottom:.5rem;">📂</div>
+        <p style="font-size:.9rem;margin-bottom:1rem;">Choose your backup file (.json)</p>
+        <label class="btn btn-outline" style="cursor:pointer;">
+          📁 Select Backup File
+          <input type="file" accept=".json" onchange="restoreBackup(this.files[0])" style="display:none;">
+        </label>
+      </div>
+      <div class="info-box" style="margin-top:1rem;">⚠️ Restore will replace all current data with the backup contents. This cannot be undone. Make sure to export a fresh backup first if needed.</div>
     </div>`;
 
   // Settings
@@ -4202,9 +5014,13 @@ function renderAdminDashboard(){
 function renderDeveloperDashboard(){
   const users=SDB.get("users",[]),properties=SDB.get("properties",[]),messages=SDB.get("messages",[]),reservations=SDB.get("reservations",[]),transactions=SDB.get("transactions",[]),cfg=SDB.get("siteConfig",{});
   const pendingAgents=users.filter(u=>u.role==="agent"&&u.verificationStatus==="pending");
-  document.getElementById("developer-analytics").innerHTML=`<div class="stat-grid"><div class="stat-card"><span class="dash-label">Page views</span><strong>${SDB.get("pageViews",0)}</strong></div><div class="stat-card"><span class="dash-label">Visitor sessions</span><strong>${SDB.get("visitorSessions",[]).length}</strong></div><div class="stat-card"><span class="dash-label">Listings</span><strong>${properties.length}</strong></div><div class="stat-card"><span class="dash-label">Users</span><strong>${users.length}</strong></div></div><div class="dashboard-card"><h3>Property breakdown</h3><div class="table-wrap"><table><tr><th>Property</th><th>Views</th><th>Reservations</th><th>Collected Transactions</th></tr>${properties.map(p=>`<tr><td>${p.title}</td><td>${p.views||0}</td><td>${reservations.filter(r=>r.propertyId===p.id).length}</td><td>${transactions.filter(t=>t.propertyId===p.id).length}</td></tr>`).join("")}</table></div></div><div class="dashboard-card"><h3>All Contracts</h3>${renderContractsList(()=>true)}</div>`;
+  document.getElementById("developer-analytics").innerHTML=`
+  ${renderFirebaseSetupPanel()}
+  <div class="stat-grid"><div class="stat-card"><span class="dash-label">Page views</span><strong>${SDB.get("pageViews",0)}</strong></div><div class="stat-card"><span class="dash-label">Visitor sessions</span><strong>${SDB.get("visitorSessions",[]).length}</strong></div><div class="stat-card"><span class="dash-label">Listings</span><strong>${properties.length}</strong></div><div class="stat-card"><span class="dash-label">Users</span><strong>${users.length}</strong></div></div><div class="dashboard-card"><h3>Property breakdown</h3><div class="table-wrap"><table><tr><th>Property</th><th>Views</th><th>Reservations</th><th>Collected Transactions</th></tr>${properties.map(p=>`<tr><td>${p.title}</td><td>${p.views||0}</td><td>${reservations.filter(r=>r.propertyId===p.id).length}</td><td>${transactions.filter(t=>t.propertyId===p.id).length}</td></tr>`).join("")}</table></div></div><div class="dashboard-card"><h3>All Contracts</h3>${renderContractsList(()=>true)}</div>`;
   document.getElementById("developer-approvals").innerHTML=`<div class="dashboard-card"><h3>Pending agents</h3>${pendingAgents.length?`<div class="table-wrap"><table><tr><th>Name</th><th>Documents</th><th>Action</th></tr>${pendingAgents.map(u=>`<tr><td>${u.name}<br><span class="muted">${u.agentType}</span></td><td>NBI ${u.nbiNumber||"—"}<br>${u.prcNumber?"PRC "+u.prcNumber:"No PRC"}</td><td><button class="btn btn-success btn-small" onclick="approveAgent(${u.id})">Approve</button></td></tr>`).join("")}</table></div>`:'<p class="muted">No pending approvals.</p>'}</div>`;
   document.getElementById("developer-messages").innerHTML=`<div class="dashboard-card"><h3>All messages</h3>${renderChatStatusPanel(messages,"developer")}</div>`;
+  const devProfileEl=document.getElementById("developer-profile");
+  if(devProfileEl) devProfileEl.innerHTML=renderProfilePage("developer");
   document.getElementById("developer-site").innerHTML=`<div class="dashboard-card">
   <h3>🎨 Brand &amp; Theme</h3>
   <div style="margin-bottom:1.2rem;">
@@ -4419,77 +5235,193 @@ function renderClientProfile(){
 function previewClientPhoto(input){const f=input.files&&input.files[0];const pr=document.getElementById("profile-photo-preview");const wr=document.getElementById("profile-photo-preview-wrap");if(!pr||!wr)return;if(f){const r=new FileReader();r.onload=e=>{pr.src=e.target.result;wr.style.display="block"};r.readAsDataURL(f)}else wr.style.display="none"}
 function saveClientProfile(){if(!currentUser)return;const upd={...currentUser};upd.occupation=document.getElementById("profile-occupation")?.value.trim()||"";upd.city=document.getElementById("profile-city")?.value.trim()||"";upd.bio=document.getElementById("profile-bio")?.value.trim()||"";const photoInput=document.getElementById("profile-photo-input");if(photoInput&&photoInput.files&&photoInput.files[0]){const r=new FileReader();r.onload=e=>{upd.profilePhoto=e.target.result;finalizeProfileSave(upd)};r.readAsDataURL(photoInput.files[0])}else finalizeProfileSave(upd)}
 
+// ── Generic profile page renderer for admin/developer ────────────────────────
+function renderProfilePage(role){
+  const u=currentUser;if(!u)return'<p class="muted">Not signed in.</p>';
+  const avatarHtml=u.profilePhoto
+    ?`<img class="profile-avatar-img" src="${u.profilePhoto}" alt="Profile photo" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--brand);">`
+    :`<div class="profile-avatar-placeholder" style="width:80px;height:80px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:#000;">${escapeHtml((u.name||"?").charAt(0))}</div>`;
+  return`<div class="page-title-bar"><h2>👤 My Profile</h2><span class="breadcrumb">${escapeHtml(u.name)}</span></div>
+  <div style="max-width:480px;">
+    <div class="dashboard-card" style="text-align:center;padding:2rem 1.5rem;margin-bottom:1rem;">
+      <div style="display:flex;justify-content:center;margin-bottom:.75rem;">${avatarHtml}</div>
+      <h2 style="margin:0 0 .3rem;">${escapeHtml(u.name)}</h2>
+      <div style="display:flex;justify-content:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.5rem;">
+        <span class="badge badge-brand">${escapeHtml(u.role)}</span>
+        ${statusBadge(u.status||"active")}
+      </div>
+      <div style="font-size:.85rem;color:var(--muted);">
+        ${u.email?`<div>📧 ${escapeHtml(u.email)}</div>`:""}
+        ${u.phone?`<div>📞 ${escapeHtml(u.phone)}</div>`:""}
+        ${u.city?`<div>📍 ${escapeHtml(u.city)}</div>`:""}
+      </div>
+    </div>
+    <div class="dashboard-card">
+      <h3>Edit Profile</h3>
+      <input type="file" id="profile-photo-input-${role}" accept="image/*" style="display:none;" onchange="previewAdminPhoto(this,'${role}')">
+      <label for="profile-photo-input-${role}" style="display:inline-flex;align-items:center;gap:.5rem;cursor:pointer;padding:.55rem 1rem;border-radius:999px;border:1px solid var(--line);background:var(--panel);font-size:.85rem;font-weight:600;margin-bottom:1rem;">📷 Change profile photo</label>
+      <div id="profile-photo-preview-wrap-${role}" style="display:none;margin-bottom:1rem;"><img id="profile-photo-preview-${role}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--brand);" alt="Preview"></div>
+      <div class="form-grid">
+        <div class="field"><label>City</label><input id="profile-city-${role}" type="text" value="${escapeHtml(u.city||"")}" placeholder="e.g. Manila"></div>
+        <div class="field"><label>About</label><textarea id="profile-bio-${role}" placeholder="Short bio…" rows="2">${escapeHtml(u.bio||"")}</textarea></div>
+      </div>
+      <div class="stack-actions" style="margin-top:1rem;">
+        <button class="btn btn-brand" onclick="saveAdminProfile('${role}')">💾 Save changes</button>
+      </div>
+    </div>
+    <div class="dashboard-card" style="margin-top:1rem;">
+      <h3>🔐 Change Password</h3>
+      <div class="form-grid">
+        <div class="field"><label>Current password</label><input id="pw-current-${role}" type="password" placeholder="Current password"></div>
+        <div class="field"><label>New password</label><input id="pw-new-${role}" type="password" placeholder="New password (min 6 chars)"></div>
+        <div class="field"><label>Confirm new password</label><input id="pw-confirm-${role}" type="password" placeholder="Repeat new password"></div>
+      </div>
+      <div class="stack-actions" style="margin-top:1rem;">
+        <button class="btn btn-outline" onclick="changeAdminPassword('${role}')">🔒 Update password</button>
+      </div>
+    </div>
+  </div>`;
+}
+function previewAdminPhoto(input,role){
+  const f=input.files&&input.files[0];
+  const pr=document.getElementById("profile-photo-preview-"+role);
+  const wr=document.getElementById("profile-photo-preview-wrap-"+role);
+  if(!pr||!wr)return;
+  if(f){const r=new FileReader();r.onload=e=>{pr.src=e.target.result;wr.style.display="block"};r.readAsDataURL(f)}
+  else wr.style.display="none";
+}
+function saveAdminProfile(role){
+  if(!currentUser)return;
+  const upd={...currentUser};
+  upd.city=document.getElementById("profile-city-"+role)?.value.trim()||"";
+  upd.bio=document.getElementById("profile-bio-"+role)?.value.trim()||"";
+  const photoInput=document.getElementById("profile-photo-input-"+role);
+  if(photoInput&&photoInput.files&&photoInput.files[0]){
+    const r=new FileReader();
+    r.onload=e=>{upd.profilePhoto=e.target.result;finalizeProfileSave(upd)};
+    r.readAsDataURL(photoInput.files[0]);
+  } else finalizeProfileSave(upd);
+}
+function changeAdminPassword(role){
+  const current=document.getElementById("pw-current-"+role)?.value;
+  const newpw=document.getElementById("pw-new-"+role)?.value;
+  const confirm=document.getElementById("pw-confirm-"+role)?.value;
+  if(!current||!newpw){notify("Fill in current and new password.","error");return;}
+  if(newpw!==confirm){notify("New passwords do not match.","error");return;}
+  if(newpw.length<6){notify("New password must be at least 6 characters.","error");return;}
+  if(currentUser.password&&current!==currentUser.password){notify("Current password is incorrect.","error");return;}
+  const users=SDB.get("users",[]);
+  const u=users.find(x=>x.id===currentUser.id);
+  if(!u){notify("User not found.","error");return;}
+  u.password=newpw;
+  currentUser.password=newpw;
+  SDB.set("users",users);
+  SDB.set("currentUser",currentUser);
+  notify("Password updated successfully.","success");
+  document.getElementById("pw-current-"+role).value="";
+  document.getElementById("pw-new-"+role).value="";
+  document.getElementById("pw-confirm-"+role).value="";
+}
+
 // ─── ASYNC BOOT ─────────────────────────────────────────────────────────────
 async function boot(){
   const loader=document.getElementById("boot-loading");
   if(loader)loader.style.display="flex";
 
-  // Always load from localStorage first so the app works offline / without Firebase
-  await cacheAll();
+  // ── Phase 1: Instant render from localStorage ─────────────────────────────
+  // Load cache from localStorage so page isn't blank while Firebase connects
+  const lsKeys=[...ARRAY_COLLECTIONS,"siteConfig","activityLog","pageViews","initialized","currentUser","visitorSessions"];
+  lsKeys.forEach(k=>{
+    const v=LS.get(k, ARRAY_COLLECTIONS.includes(k)?[]:null);
+    if(v!==null&&v!==undefined) CACHE[k]=v;
+  });
+
   syncActivationVerificationMethod();
   syncActivationRole();
 
-  // Restore logged-in user from cache immediately
-  const _savedEarly=SDB.get("currentUser",null);
-  if(_savedEarly&&_savedEarly.id){
-    const _usersEarly=SDB.get("users",[]);
-    const _freshEarly=_usersEarly.find(u=>u.id===_savedEarly.id);
+  // Restore session from localStorage immediately
+  const _earlyUser=LS.get("currentUser",null);
+  if(_earlyUser&&_earlyUser.id){
+    const _earlyUsers=LS.get("users",[]);
+    const _freshEarly=_earlyUsers.find(u=>u.id===_earlyUser.id);
     if(_freshEarly&&_freshEarly.status!=="suspended") currentUser=_freshEarly;
-    else SDB.set("currentUser",null);
   }
 
+  applyTheme(CACHE.siteConfig||{});
   renderHome();
   renderRulesPage();
   if(loader)loader.style.display="none";
   if(currentUser){ applyUserState(); openMyPortal(); }
 
-  // Seed default data if first run
-  await seedData();
-  await cacheAll();
+  // ── Phase 2: Wait for Firebase then load authoritative data ───────────────
+  const fbReady = window._fbReady || await Promise.race([
+    new Promise(res=>window.addEventListener("firebase-ready",()=>res(true),{once:true})),
+    new Promise(res=>setTimeout(()=>res(false),4000))
+  ]);
+
+  if(fbReady && window._fbDb){
+    try{
+      // Load from Firestore — this is the authoritative source
+      await cacheAll();
+      // Seed only if truly first run (no users in Firestore)
+      await seedData();
+      await cacheAll(); // re-cache after potential seed
+    }catch(e){ console.warn("Firestore load failed, using localStorage:",e.message); }
+  } else {
+    // No Firebase — use localStorage and seed if needed
+    await seedData();
+  }
+
   cleanupDuplicateProperties();
   normalizeReservationDates();
   trackVisitor();
 
-  // Re-check user after seed (in case it was just created)
-  if(!currentUser){
-    const savedUser=SDB.get("currentUser",null);
-    if(savedUser&&savedUser.id){
-      const users=SDB.get("users",[]);
-      const freshUser=users.find(u=>u.id===savedUser.id);
-      if(freshUser&&freshUser.status!=="suspended"){ currentUser=freshUser; }
-      else { SDB.set("currentUser",null); }
+  // Re-establish session from authoritative data
+  const savedUser=SDB.get("currentUser",null);
+  if(savedUser&&savedUser.id){
+    const users=SDB.get("users",[]);
+    const freshUser=users.find(u=>u.id===savedUser.id);
+    if(freshUser&&freshUser.status!=="suspended"){
+      currentUser=freshUser;
+      SDB.set("currentUser",freshUser); // keep in sync
+    } else {
+      currentUser=null;
+      SDB.set("currentUser",null);
     }
   }
 
+  applyTheme(SDB.get("siteConfig",{}));
   renderHome();
   renderRulesPage();
-  if(currentUser){ applyUserState(); openMyPortal(); }
-
-  // Try Firebase in background (non-blocking)
-  if(!window._fbReady){
-    Promise.race([
-      new Promise(res=>window.addEventListener("firebase-ready",res,{once:true})),
-      new Promise(res=>setTimeout(res,3000))
-    ]).then(async ()=>{
-      if(window._fbReady){
-        try{
-          await cacheAll();
-          renderHome();
-          if(currentUser) renderDashboards();
-        }catch(e){ console.warn("Firebase hydration failed",e); }
-      }
-    });
-  } else {
-    // Firebase already ready, sync from cloud
-    try{
-      await cacheAll();
-      renderHome();
-      if(currentUser) renderDashboards();
-    }catch(e){ console.warn("Firebase sync failed",e); }
-  }
+  updateBadges();
+  if(currentUser){ applyUserState(); openMyPortal(); renderDashboards(); }
 }
 
 boot();
+
+// ── Mobile Sidebar Drawer ──────────────────────────────────────────────────
+function openSidebar(role){
+  const sidebar = document.getElementById(role+'-sidebar');
+  const overlay = document.getElementById(role+'-sidebar-overlay');
+  if(sidebar){ sidebar.classList.add('open'); sidebar.style.transform='translateX(0)'; }
+  if(overlay){ overlay.style.display='block'; }
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar(role){
+  const sidebar = document.getElementById(role+'-sidebar');
+  const overlay = document.getElementById(role+'-sidebar-overlay');
+  if(sidebar){ sidebar.classList.remove('open'); sidebar.style.transform=''; }
+  if(overlay){ overlay.style.display=''; }
+  document.body.style.overflow = '';
+}
+// Patch sidebar nav items to close drawer on mobile tap
+document.addEventListener('click', function(e){
+  const item = e.target.closest('.sidebar-item');
+  if(item && window.innerWidth <= 900){
+    ['client','agent','admin'].forEach(r => closeSidebar(r));
+  }
+});
+
 </script>
 
 
